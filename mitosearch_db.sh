@@ -85,7 +85,7 @@ cp ${workdir}/data/lat-long-date.txt ${metadataDir}
 # inputFileを削除
 rm -f ${workdir}/inputFiles/*.input
 
-#pull from git
+#push to git
 git add ${mitosearch_path}
 git commit -m "update database monthly"
 git push -u origin main
