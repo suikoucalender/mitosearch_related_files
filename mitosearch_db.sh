@@ -16,7 +16,7 @@ metadataDir_dev=/home/yoshitake/mitosearch_dev/Mitosearch/data/fish
 singularity_path=/home/yoshitake/tool/singularity-3.5.2/bin/singularity
 
 #projectのPATH
-mitosearch_path=/home/yoshitake/mitosearch
+mitosearch_path=/home/yoshitake/mitosearch/Mitosearch
 
 # ------------
 
@@ -86,6 +86,7 @@ cp ${workdir}/data/lat-long-date.txt ${metadataDir}
 rm -f ${workdir}/inputFiles/*.input
 
 #push to git
-git add ${mitosearch_path}
+cd ${mitosearch_path}
+git add .
 git commit -m "update database monthly"
 git push -u origin main
