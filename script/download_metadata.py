@@ -21,6 +21,7 @@ pjts_selector = ".tabulator-cell[tabulator-field='_id']"
 projects = driver.find_elements(By.CSS_SELECTOR, pjts_selector)
 
 # NCBI SRAで検索するための文字列を作成
+print("Number of Projects: "+str(len(projects))) #もし100になったら対策が必要。リストの上限が100なので。
 search_str = ""
 for pjt in projects:
   search_str = search_str + " or " + pjt.text

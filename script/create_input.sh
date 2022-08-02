@@ -12,7 +12,7 @@ workdir=/home/yoshitake/mitosearch_related_files
 # Scriptが配置されているディレクトリ
 scriptdir=${workdir}/script
 # 各サンプルの一時ファイルを配置するディレクトリを格納するディレクトリ
-tmpdir=${workdir}/tmp
+tmpdir=/tmp #${workdir}/tmp
 # サンプルデータを配置するディレクトリ(各ディレクトリでファイルの重複がないようにする必要がある)
 edna_file_list=(${workdir}/fastq)
 # MitoFishのBlast DBファイル
@@ -70,7 +70,7 @@ ${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt -a CA
 awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq | sed 's/@/>/' > ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta
 
 # MitoFishデータベースに対してBlastnで相同性検索を行う。
-#${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 1 -out ${tmpdir}/${prefix}/blast.result
+${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 1 -out ${tmpdir}/${prefix}/blast.result
 
 #Inputファイルのヘッダを書き込み
 echo -e "id\t${prefix}.fastq" > ${tmpdir}/${prefix}/${prefix}.input.tmp
@@ -82,3 +82,4 @@ cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100' | awk '$5 > 90' | awk '$6 
 # python2 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
 ${singularity_path} run --bind ${outputFileDirPath}:${outputFileDirPath} ${workdir}/singularity_image/python_xlrd.sif python ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
 #docker run -i --rm -v ${outputFileDirPath}:${outputFileDirPath} -v ${workdir}:${workdir} -v ${workdir} -u `id -u`':'`id -g` c2997108/selenium-chrome:4.3.0_selenium_xlrd python3 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
+rm -rf ${tmpdir}/${prefix}
