@@ -223,7 +223,7 @@ def calc_percent(inputFileRowList):
 
 def write_inputfile(inputFileRowList):
     # 書き込み先のinputファイルを書き込みモードで開く
-    outputFile = open(outputFilePath, "w")
+    outputFile = open(outputFilePath, "wb")
 
     # 各行を書き込み
     for row in inputFileRowList:
