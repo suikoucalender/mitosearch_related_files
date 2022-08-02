@@ -22,7 +22,7 @@ fishname_ja_Path=${workdir}/db/20210718_JAFList.xlsx
 # singularityのPath
 singularity_path=/home/yoshitake/tool/singularity-3.5.2/bin/singularity
 # blastnのPATH
-blastn_path=/home/yoshitake/ncbi-blast-2.13.1+/bin/blastn
+blastn_path=/home/yoshitake/ncbi-blast-2.13.0+/bin/blastn
 
 # ------------
 

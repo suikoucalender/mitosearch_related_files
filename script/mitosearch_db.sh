@@ -29,6 +29,7 @@ mkdir -p ${workdir}/data
 mkdir -p ${workdir}/download
 mkdir -p ${workdir}/fastq
 mkdir -p ${workdir}/tmp
+mkdir -p ${workdir}/inputFiles
 
 # Backupを取得
 timestamp=$(date "+%Y%m%d-%H%M")
