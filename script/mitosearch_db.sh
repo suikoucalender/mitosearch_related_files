@@ -62,7 +62,7 @@ cp -rp ${workdir}/data ${workdir}/backup/${timestamp}/workfile
 IFS=$'\n'
 
 set +e
-for id in `cat ${workdir}/data/new_samples.txt|head -n 1`
+for id in `cat ${workdir}/data/new_samples.txt`
 do
     # FASTQダウンロード
     ${singularity_path} run ${workdir}/singularity_image/sratoolkit.sif fastq-dump ${id} --gzip --split-files --outdir ${workdir}/fastq/
@@ -77,12 +77,10 @@ do
     fi
 
     # シーケンスファイルとtmpデータを削除
-#    rm -rf ${workdir}/tmp/*
-#    rm -f ${workdir}/fastq/*.gz
+    rm -rf ${workdir}/tmp/*
+    rm -f ${workdir}/fastq/*.gz
 done
 set -e
-
-exit
 
 # テスト環境にデータをコピー
 cp ${workdir}/data/lat-long-date.txt ${metadataDir_dev}
@@ -97,4 +95,4 @@ cd ${mitosearch_dev_path}
 git pull
 git add .
 git commit -m "update database monthly"
-git push -u origin main
+git push

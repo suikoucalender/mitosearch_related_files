@@ -1,0 +1,11 @@
+#!/bin/bash
+#$ -S /bin/bash
+#$ -cwd
+#$ -pe def_slot 8
+
+source ~/.bashrc
+
+echo SGE_JOB_SPOOL_DIR: "$SGE_JOB_SPOOL_DIR"
+echo CMD: "$*"
+eval "$*"
+
