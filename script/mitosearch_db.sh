@@ -3,36 +3,41 @@
 # ------------
 
 # 作業ディレクトリを指定
-workdir=/home/yoshitake/mitosearch_update_db
-
-# inputFileを格納しているディレクトリ
-mitosearch_db=/home/yoshitake/mitosearch_db/db_fish
-
-# metadataを格納しているディレクトリ
-metadataDir=/home/yoshitake/mitosearch/Mitosearch/data/fish
-metadataDir_dev=/home/yoshitake/mitosearch_dev/Mitosearch/data/fish
-
-# singularityのPATH
-singularity_path=/home/yoshitake/tool/singularity-3.5.2/bin/singularity
+workdir=/home/yoshitake/mitosearch_related_files
 
 #projectのPATH
 mitosearch_path=/home/yoshitake/mitosearch/Mitosearch
-mitosearch_dev_path=/home/yoshitake/mitosearch_dev/Mitosearch/
+mitosearch_dev_path=/home/yoshitake/mitosearch_dev/Mitosearch
+
+# inputFileを格納しているディレクトリ
+mitosearch_db="$workdir"/db_fish
+
+# metadataを格納しているディレクトリ
+metadataDir="$mitosearch_path"/data/fish
+metadataDir_dev="$mitosearch_dev_path"/data/fish
+
+# singularityのPATH
+singularity_path=/home/yoshitake/tool/singularity-3.5.2/bin/singularity
 
 # ------------
 
 # エラーが発生したら終了
 set -e
 
+mkdir -p $mitosearch_db
+mkdir -p ${workdir}/data
+mkdir -p ${workdir}/download
+mkdir -p ${workdir}/fastq
+mkdir -p ${workdir}/tmp
+
 # Backupを取得
 timestamp=$(date "+%Y%m%d-%H%M")
-mkdir ${workdir}/backup/${timestamp}
-mkdir ${workdir}/backup/${timestamp}/inputFiles
-cp ${mitosearch_db}/*.input ${workdir}/backup/${timestamp}/inputFiles
-cp -r ${metadataDir} ${workdir}/backup/${timestamp}
+mkdir -p ${workdir}/backup/${timestamp}/inputFiles
+cp -rp ${mitosearch_db}/*.input ${workdir}/backup/${timestamp}/inputFiles || true
+cp -rp ${metadataDir} ${workdir}/backup/${timestamp} || true
 
 # metadataを作業ディレクトリにコピー
-cp  ${metadataDir}/lat-long-date.txt ${workdir}/data
+cp -p  ${metadataDir}/lat-long-date.txt ${workdir}/data/ || true
 
 # 過去のメタデータを削除
 if [ -e ${workdir}/download/SraAccList.txt ]; then
@@ -40,7 +45,8 @@ if [ -e ${workdir}/download/SraAccList.txt ]; then
 fi
 
 # MiFishプライマーでヒットしたSRA番号のリストを取得
-${singularity_path} exec ${workdir}/singularity_image/selenium_client.sif  python ${workdir}/script/download_metadata.py
+docker run -i --rm -v "$workdir":"$workdir" -w "$workdir" c2997108/selenium-chrome:4.3.0_selenium_xlrd bash ${workdir}/script/download_metadata.sh
+mv ${workdir}/SraAccList.txt ${workdir}/download/SraAccList.txt
 
 # lat-long-date.txtから既にダウンロードされているサンプルのSRA番号を取得
 cat ${workdir}/data/lat-long-date.txt | cut -f 1 > ${workdir}/data/exist_samples.txt
@@ -49,19 +55,16 @@ cat ${workdir}/data/lat-long-date.txt | cut -f 1 > ${workdir}/data/exist_samples
 sort ${workdir}/download/SraAccList.txt ${workdir}/data/exist_samples.txt ${workdir}/data/exist_samples.txt | uniq -u > ${workdir}/data/new_samples.txt
 
 # 新しくダウンロードされたファイルの情報などを取得
-cp -r ${workdir}/data ${workdir}/backup/${timestamp}/workfile
+cp -rp ${workdir}/data ${workdir}/backup/${timestamp}/workfile
 
 # FASTQダウンロードとinputFile作成
 IFS=$'\n'
 
 set +e
-for id in `cat ${workdir}/data/new_samples.txt`
+for id in `cat ${workdir}/data/new_samples.txt|head -n 1`
 do
     # FASTQダウンロード
     ${singularity_path} run ${workdir}/singularity_image/sratoolkit.sif fastq-dump ${id} --gzip --split-files --outdir ${workdir}/fastq/
-
-    # prefetchされた.sraファイルを削除
-    rm -f ~/ncbi/public/sra/${id}.sra
 
     if [ -e ${workdir}/fastq/${id}_1.fastq.gz ]; then
         # inputFile作成
@@ -73,10 +76,12 @@ do
     fi
 
     # シーケンスファイルとtmpデータを削除
-    rm -rf ${workdir}/tmp/*
-    rm -f ${workdir}/fastq/*.gz
+#    rm -rf ${workdir}/tmp/*
+#    rm -f ${workdir}/fastq/*.gz
 done
 set -e
+
+exit
 
 # テスト環境にデータをコピー
 cp ${workdir}/data/lat-long-date.txt ${metadataDir_dev}

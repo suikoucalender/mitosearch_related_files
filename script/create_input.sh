@@ -6,7 +6,7 @@ prefix=$1
 # ------------
 
 # Workdir
-workdir=/home/yoshitake/mitosearch_update_db
+workdir=/home/yoshitake/mitosearch_related_files
 # Scriptが配置されているディレクトリ
 scriptdir=${workdir}/script
 # 各サンプルの一時ファイルを配置するディレクトリを格納するディレクトリ
@@ -22,7 +22,7 @@ fishname_ja_Path=${workdir}/db/20210718_JAFList.xlsx
 # singularityのPath
 singularity_path=/home/yoshitake/tool/singularity-3.5.2/bin/singularity
 # blastnのPATH
-blastn_path=/home/yoshitake/ncbi-blast-2.8.1+/bin/blastn
+blastn_path=/home/yoshitake/ncbi-blast-2.13.1+/bin/blastn
 
 # ------------
 
@@ -78,4 +78,5 @@ cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100' | awk '$5 > 90' | awk '$6 
 
 # inputファイルの修正
 # python2 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
-${singularity_path} run --bind ${outputFileDirPath}:${outputFileDirPath} ${workdir}/singularity_image/python_xlrd.sif python ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
+#${singularity_path} run --bind ${outputFileDirPath}:${outputFileDirPath} ${workdir}/singularity_image/python_xlrd.sif python ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
+docker run -i --rm -v ${outputFileDirPath}:${outputFileDirPath} -v ${workdir}:${workdir} -v ${workdir} -u `id -u`':'`id -g` c2997108/selenium-chrome:4.3.0_selenium_xlrd python3 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}

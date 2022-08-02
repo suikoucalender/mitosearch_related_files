@@ -1,5 +1,6 @@
 import time
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 
 # Chromeのオプション
 options = webdriver.ChromeOptions()
@@ -16,16 +17,18 @@ time.sleep(5)
 
 # cssタグを指定して、プロジェクトを取得
 pjts_selector = ".tabulator-cell[tabulator-field='_id']"
-projects = driver.find_elements_by_css_selector(pjts_selector)
+#projects = driver.find_elements_by_css_selector(pjts_selector) #ver3までの書き方
+projects = driver.find_elements(By.CSS_SELECTOR, pjts_selector)
 
 # NCBI SRAで検索するための文字列を作成
 search_str = ""
 for pjt in projects:
   search_str = search_str + " or " + pjt.text
+
 search_str = search_str.replace(" or ", "", 1)
 print(search_str)
 
-driver = webdriver.Remote(command_executor='http://localhost:4444/wd/hub', options=options)
+#driver = webdriver.Remote(command_executor='http://localhost:4444/wd/hub', options=options)
 driver.get("https://www.ncbi.nlm.nih.gov/sra/?term=" + search_str)
 
 time.sleep(10)
