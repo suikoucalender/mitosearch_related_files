@@ -1,32 +1,27 @@
 #!/bin/bash
 
-set -x
+set -ex
 
 # SRA番号
 prefix=$1
 
-# ------------
+# フォルダ等の設定を読み込み
+sdir=$(dirname `readlink -f "$0" || echo "$0"`)
+source "$sdir"/config.sh
 
-# Workdir
-workdir=/home/yoshitake/mitosearch_related_files
-# Scriptが配置されているディレクトリ
-scriptdir=${workdir}/script
-# 各サンプルの一時ファイルを配置するディレクトリを格納するディレクトリ
-tmpdir=/tmp #${workdir}/tmp
-# サンプルデータを配置するディレクトリ(各ディレクトリでファイルの重複がないようにする必要がある)
-edna_file_list=(${workdir}/fastq)
-# MitoFishのBlast DBファイル
-blastdb=${workdir}/db/complete_partial_mitogenomes.fa
-# inputファイルの出力先ディレクトリ
-outputFileDirPath=${workdir}/inputFiles
-# 魚種和名ファイルのPath
-fishname_ja_Path=${workdir}/db/20210718_JAFList.xlsx
-# singularityのPath
-singularity_path=/home/yoshitake/tool/singularity-3.5.2/bin/singularity
-# blastnのPATH
-blastn_path=/home/yoshitake/ncbi-blast-2.13.0+/bin/blastn
+#Singularityのイメージがなければ、githubのリリースから取ってくる。ファイルサイズが大きいのでソースコードには含められない。
+if [ ! -e "${workdir}/singularity_image/flash.sif" ]; then
+ wget -O "${workdir}/singularity_image/flash.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/flash.sif
+fi
 
-# ------------
+if [ ! -e "${workdir}/singularity_image/cutadapt.sif" ]; then
+ wget -O "${workdir}/singularity_image/cutadapt.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/cutadapt.sif
+fi
+
+if [ ! -e "${workdir}/singularity_image/python_xlrd.sif" ]; then
+ wget -O "${workdir}/singularity_image/python_xlrd.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/python_xlrd.sif
+fi
+
 
 # 一時ファイルを配置するディレクトリをサンプルごとに作成
 mkdir -p ${tmpdir}/${prefix}
