@@ -7,6 +7,11 @@ source "$sdir"/config.sh
 # 引数
 id="$1"
 
+#Singularityのイメージがなければ、githubのリリースから取ってくる。ファイルサイズが大きいのでソースコードには含められない。
+if [ ! -e "${workdir}/singularity_image/sratoolkit.sif" ]; then
+ wget -O "${workdir}/singularity_image/sratoolkit.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/sratoolkit.sif
+fi
+
 # エラーが発生したら終了+コマンド表示+パイプ途中でエラーの場合もエラーにする
 set -ex
 set -o pipefail
