@@ -31,13 +31,21 @@ do
 
 # Pair EndのシーケンスデータはFLASHでマージしたのちに、マージがされなかったForward側のリードを結合する
 if [ -e ${edna_sequence_filedir}/${prefix}_1.fastq.gz -a -e ${edna_sequence_filedir}/${prefix}_2.fastq.gz ]; then
-    cp ${edna_sequence_filedir}/${prefix}_1.fastq.gz ${tmpdir}/${prefix}
-    gunzip ${tmpdir}/${prefix}/${prefix}_1.fastq.gz
+    cp -f ${edna_sequence_filedir}/${prefix}_1.fastq.gz ${edna_sequence_filedir}/${prefix}_2.fastq.gz ${tmpdir}/${prefix}
+    #gunzip ${tmpdir}/${prefix}/${prefix}_1.fastq.gz
     # FLAShによるペアエンドリードのマージを行った後に、マージに失敗したリードについてはForward側のみをFLAShの出力ファイル(out.extendedFrags.fastq)に追加する。
     # マージに失敗(ペアエンド間でリード数が異なる場合など)ではForward側のリードファイルを使用する(out.extendedFrags.fastqというファイルにForward側のリード配列を格納)
     # echo "singularity run --bind ${edna_sequence_filedir}:${edna_sequence_filedir} ${workdir}/singularity_image/flash.sif -d ${tmpdir}/${prefix} -M 300 ${edna_sequence_filedir}/${prefix}_1.fastq.gz ${edna_sequence_filedir}/${prefix}_2.fastq.gz"
-    { { ${singularity_path} run --bind ${edna_sequence_filedir}:${edna_sequence_filedir} ${workdir}/singularity_image/flash.sif -d ${tmpdir}/${prefix} -M 300 ${edna_sequence_filedir}/${prefix}_1.fastq.gz ${edna_sequence_filedir}/${prefix}_2.fastq.gz; } && cat ${tmpdir}/${prefix}/out.notCombined_1.fastq >> ${tmpdir}/${prefix}/out.extendedFrags.fastq; } || cat ${tmpdir}/${prefix}/${prefix}_1.fastq > ${tmpdir}/${prefix}/out.extendedFrags.fastq
-    
+    ( ( ${singularity_path} run ${workdir}/singularity_image/flash.sif flash -d ${tmpdir}/${prefix} -M 300 ${tmpdir}/${prefix}_1.fastq.gz ${tmpdir}/${prefix}_2.fastq.gz ) &&
+      cat ${tmpdir}/${prefix}/out.notCombined_1.fastq >> ${tmpdir}/${prefix}/out.extendedFrags.fastq ) ||
+     zcat ${tmpdir}/${prefix}/${prefix}_1.fastq.gz > ${tmpdir}/${prefix}/out.extendedFrags.fastq
+
+elif [ -e ${edna_sequence_filedir}/${prefix}_1.fastq -a -e ${edna_sequence_filedir}/${prefix}_2.fastq ]; then
+    cp -f ${edna_sequence_filedir}/${prefix}_1.fastq ${edna_sequence_filedir}/${prefix}_2.fastq ${tmpdir}/${prefix}
+    ( ( ${singularity_path} run ${workdir}/singularity_image/flash.sif flash -d ${tmpdir}/${prefix} -M 300 ${tmpdir}/${prefix}_1.fastq ${tmpdir}/${prefix}_2.fastq ) &&
+      cat ${tmpdir}/${prefix}/out.notCombined_1.fastq >> ${tmpdir}/${prefix}/out.extendedFrags.fastq ) ||
+     cat ${tmpdir}/${prefix}/${prefix}_1.fastq > ${tmpdir}/${prefix}/out.extendedFrags.fastq
+
 # Single Endのシーケンスデータはそのリードをそのまま使用する
 else
     if [ -e ${edna_sequence_filedir}/${prefix}_1.fastq.gz ]; then
@@ -75,6 +83,6 @@ cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100' | awk '$5 > 90' | awk '$6 
 
 # inputファイルの修正
 # python2 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
-${singularity_path} run --bind ${outputFileDirPath}:${outputFileDirPath} ${workdir}/singularity_image/python_xlrd.sif python ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
+${singularity_path} run --bind ${outputFileDirPath}:${outputFileDirPath} --bind `dirname ${fishname_ja_Path}`:`dirname ${fishname_ja_Path}` ${workdir}/singularity_image/python_xlrd.sif python ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
 #docker run -i --rm -v ${outputFileDirPath}:${outputFileDirPath} -v ${workdir}:${workdir} -v ${workdir} -u `id -u`':'`id -g` c2997108/selenium-chrome:4.3.0_selenium_xlrd python3 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
 rm -rf ${tmpdir}/${prefix}
