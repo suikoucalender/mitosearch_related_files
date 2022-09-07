@@ -7,9 +7,8 @@ options = webdriver.ChromeOptions()
 # options.add_argument("--start-maximized")
 
 # Selenium Serverに接続
-driver = webdriver.Remote(command_executor='http://localhost:4444/wd/hub', options=options)
-
-# driver = webdriver.Chrome()
+# driver = webdriver.Remote(command_executor='http://localhost:4444/wd/hub', options=options)
+driver = webdriver.Chrome()
 
 # DBCLS SRAにGETメソッドでリクエストを送信
 driver.get("https://sra.dbcls.jp/result.html?target_db=sra&term=mifish&rows=100&sort=Updated&order=desc")
