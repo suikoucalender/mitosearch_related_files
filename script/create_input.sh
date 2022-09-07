@@ -36,13 +36,13 @@ if [ -e ${edna_sequence_filedir}/${prefix}_1.fastq.gz -a -e ${edna_sequence_file
     # FLAShによるペアエンドリードのマージを行った後に、マージに失敗したリードについてはForward側のみをFLAShの出力ファイル(out.extendedFrags.fastq)に追加する。
     # マージに失敗(ペアエンド間でリード数が異なる場合など)ではForward側のリードファイルを使用する(out.extendedFrags.fastqというファイルにForward側のリード配列を格納)
     # echo "singularity run --bind ${edna_sequence_filedir}:${edna_sequence_filedir} ${workdir}/singularity_image/flash.sif -d ${tmpdir}/${prefix} -M 300 ${edna_sequence_filedir}/${prefix}_1.fastq.gz ${edna_sequence_filedir}/${prefix}_2.fastq.gz"
-    ( ( ${singularity_path} run ${workdir}/singularity_image/flash.sif flash -d ${tmpdir}/${prefix} -M 300 ${tmpdir}/${prefix}_1.fastq.gz ${tmpdir}/${prefix}_2.fastq.gz ) &&
+    ( ( ${singularity_path} run ${workdir}/singularity_image/flash.sif flash -d ${tmpdir}/${prefix} -M 300 ${tmpdir}/${prefix}/${prefix}_1.fastq.gz ${tmpdir}/${prefix}/${prefix}_2.fastq.gz ) &&
       cat ${tmpdir}/${prefix}/out.notCombined_1.fastq >> ${tmpdir}/${prefix}/out.extendedFrags.fastq ) ||
      zcat ${tmpdir}/${prefix}/${prefix}_1.fastq.gz > ${tmpdir}/${prefix}/out.extendedFrags.fastq
 
 elif [ -e ${edna_sequence_filedir}/${prefix}_1.fastq -a -e ${edna_sequence_filedir}/${prefix}_2.fastq ]; then
     cp -f ${edna_sequence_filedir}/${prefix}_1.fastq ${edna_sequence_filedir}/${prefix}_2.fastq ${tmpdir}/${prefix}
-    ( ( ${singularity_path} run ${workdir}/singularity_image/flash.sif flash -d ${tmpdir}/${prefix} -M 300 ${tmpdir}/${prefix}_1.fastq ${tmpdir}/${prefix}_2.fastq ) &&
+    ( ( ${singularity_path} run ${workdir}/singularity_image/flash.sif flash -d ${tmpdir}/${prefix} -M 300 ${tmpdir}/${prefix}/${prefix}_1.fastq ${tmpdir}/${prefix}/${prefix}_2.fastq ) &&
       cat ${tmpdir}/${prefix}/out.notCombined_1.fastq >> ${tmpdir}/${prefix}/out.extendedFrags.fastq ) ||
      cat ${tmpdir}/${prefix}/${prefix}_1.fastq > ${tmpdir}/${prefix}/out.extendedFrags.fastq
 
