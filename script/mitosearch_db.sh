@@ -15,7 +15,7 @@ mkdir -p ${workdir}/fastq
 mkdir -p ${workdir}/tmp
 mkdir -p ${workdir}/inputFiles
 
-# Backupを取得
+# Backupを取得 本番環境のほうをバックアップ
 timestamp=$(date "+%Y%m%d-%H%M")
 mkdir -p ${workdir}/backup/${timestamp}/inputFiles
 cp -rp ${mitosearch_db}/*.input ${workdir}/backup/${timestamp}/inputFiles || true
