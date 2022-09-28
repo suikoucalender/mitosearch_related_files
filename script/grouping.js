@@ -1,4 +1,4 @@
-//node grouping.js filepath
+//node grouping.js inputFileName
 //read species file
 const { group } = require("console");
 const { Socket } = require("dgram");
