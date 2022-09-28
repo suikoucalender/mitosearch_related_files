@@ -5,12 +5,15 @@ var arg=process.argv.splice(2);
 file=arg[0]
 //var data = fs.readFileSync('/System/Volumes/Data/home/2544842260/Public/100again.txt');
 var data = fs.readFileSync(file);
+
 //change the data to 1D-array
-var arr = data.toString().split("\n");
+var arr = data.toString().trim().split("\n");
+
 arr.sort();
 var processList=[]
 var speciesNumber=arr.length
 var saveList=[]
+
 //change the data to 2D-array
 for (var species=0; species<speciesNumber; species++) {
     processList[species]=arr[species].split(";")
@@ -229,3 +232,4 @@ fs.writeFile("commonness.txt",commonness,function(err){
         return console.log(err)
     }
 })
+
