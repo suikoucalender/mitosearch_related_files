@@ -1,8 +1,12 @@
+//node grouping.js filepath
 //read species file
 const { group } = require("console");
 const { Socket } = require("dgram");
 var fs = require("fs");
-var data = fs.readFileSync('/System/Volumes/Data/home/2544842260/Public/100again.txt');
+var arg=process.argv.splice(2);
+file=arg[0]
+//var data = fs.readFileSync('/System/Volumes/Data/home/2544842260/Public/100again.txt');
+var data = fs.readFileSync(file);
 //change the data to 1D-array
 var arr = data.toString().split("\n");
 arr.sort();
