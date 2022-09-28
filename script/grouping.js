@@ -1,7 +1,5 @@
 //node grouping.js inputFilePath
 //read species file
-const { group } = require("console");
-const { Socket } = require("dgram");
 var fs = require("fs");
 var arg=process.argv.splice(2);
 file=arg[0]
