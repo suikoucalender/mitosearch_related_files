@@ -3,7 +3,6 @@
 var fs = require("fs");
 var arg=process.argv.splice(2);
 file=arg[0]
-//var data = fs.readFileSync('/System/Volumes/Data/home/2544842260/Public/100again.txt');
 var data = fs.readFileSync(file);
 
 //change the data to 1D-array
