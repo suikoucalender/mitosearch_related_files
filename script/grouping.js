@@ -1,7 +1,12 @@
+#!/usr/bin/env node
 //node grouping.js inputFilePath
 //read species file
 var fs = require("fs");
 var arg=process.argv.splice(2);
+if(arg.length===0){
+ console.log("grouping.js <inputFilePath>");
+ process.exit(1);
+}
 file=arg[0]
 var data = fs.readFileSync(file);
 
