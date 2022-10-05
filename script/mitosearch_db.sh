@@ -76,12 +76,16 @@ touch ${workdir}/data/mapwater.result
 cat ${workdir}/data/lat-long-date.txt |
  awk -F'\t' '$2~"^[0-9]"{split($2,arr," "); if(arr[2]=="N"){k=arr[1]}else{k=-arr[1]}; if(arr[4]=="E"){k2=arr[3]}else{k2=-arr[3]}; if(flag[k":"k2]==0){flag[k":"k2]=1; print $1"\t"k"\t"k2}}'|
  awk -F'\t' 'FILENAME==ARGV[1]{a[$1]=1} FILENAME==ARGV[2]&&a[$2" "$3]==0{print $0}' <(awk -F'\t' '{split($1,arr,":"); split($2,arr2," "); print arr[2]"\t"arr2[1]}' ${workdir}/data/mapwater.result) /dev/stdin |
- awk '{print "echo "$1":"$2" "$3"; docker run -v '$sdir':'$sdir' -w '$sdir'  -i --rm c2997108/python:3.10-staticmap_2 mapwater.py "$3" "$2}'|xargs -I{} bash -c "{}"|paste - - > ${workdir}/data/mapwater.result.new
+ awk '{print "echo -e \\\""$1":"$2" "$3"\t`docker run -v '$sdir':'$sdir' -w '$sdir'  -i --rm c2997108/python:3.10-staticmap_2 mapwater.py "$3" "$2"`\\\""}'|xargs -I{} bash -c "{}"|
+ awk -F'\t' '$2!=""{print $0}' > ${workdir}/data/mapwater.result.new
 cat ${workdir}/data/mapwater.result.new >> ${workdir}/data/mapwater.result
 rm -f ${workdir}/data/mapwater.result.new
 cat ${workdir}/data/lat-long-date.txt |
  awk -F'\t' '$2~"^[0-9]"{split($2,arr," "); if(arr[2]=="N"){k=arr[1]}else{k=-arr[1]}; if(arr[4]=="E"){k2=arr[3]}else{k2=-arr[3]}; print $1"\t"k" "k2}'|
- awk -F'\t' 'FILENAME==ARGV[1]{data[$1]=$2} FILENAME==ARGV[2]{print $1"\t"data[$2]}' <(awk -F'\t' '{split($1,arr,":"); split($2,arr2," "); print arr[2]"\t"arr2[1]}' ${workdir}/data/mapwater.result) /dev/stdin > ${workdir}/data/mapwater.result.txt
+ awk -F'\t' '
+  FILENAME==ARGV[1]{data[$1]=$2}
+  FILENAME==ARGV[2]{print $1"\t"data[$2]}
+ ' <(awk -F'\t' '{split($1,arr,":"); split($2,arr2," "); print arr[2]"\t"arr2[1]}' ${workdir}/data/mapwater.result) /dev/stdin > ${workdir}/data/mapwater.result.txt
 
 ##テスト＆本番環境に反映
 cp -p ${workdir}/data/mapwater.result.txt ${workdir}/data/mapwater.result ${metadataDir_dev}
