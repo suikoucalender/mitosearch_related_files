@@ -14,6 +14,7 @@ outputFilePath = outputFileDirPath + "/" + prefix + ".input"
 def main():
     # ファイルが存在しない場合は例外処理
     if not os.path.exists(inputFilePath):
+        print("No input file")
         return
     
     # input.tmpファイルを開く
