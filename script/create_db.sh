@@ -66,7 +66,7 @@ ${singularity_path} run ${workdir}/singularity_image/blast.sif blastn -db $db -q
 
 # アダプター配列のマスク
 if [ `cat ${db}.adaptors.bed|wc -l` -gt 0 ]; then
-    ${singularity_path} run ${workdir}/singularity_image/bedtools.sif bedtools maskfasta -fi $db -bed ${db}.adaptors.bed -fo ${db}.maskadaptors
+    ${singularity_path} run -B /tmp:/tmp -W $PWD ${workdir}/singularity_image/bedtools.sif bedtools maskfasta -fi $db -bed ${db}.adaptors.bed -fo ${db}.maskadaptors
 else
     cat ${db} > ${db}.maskadaptors
 fi
@@ -95,6 +95,7 @@ awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=1;}if(FILENAME==ARGV[2]){split($1,ar
 ${singularity_path} run ${workdir}/singularity_image/blast.sif makeblastdb -dbtype nucl -max_file_sz 50MB -in database.fasta
 
 # 結果ファイルの移動、中間ファイル削除
+rm database.fasta
 mv database.fasta* `dirname $blastdb`
 cd /
 rm -rf /tmp/create_blast_db_tempdir
