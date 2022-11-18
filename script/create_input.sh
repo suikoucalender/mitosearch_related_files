@@ -22,6 +22,11 @@ if [ ! -e "${workdir}/singularity_image/python_xlrd.sif" ]; then
  wget -O "${workdir}/singularity_image/python_xlrd.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/python_xlrd.sif
 fi
 
+#singularity build seqkit.sif docker://quay.io/biocontainers/seqkit:2.3.1--h9ee0642_0
+if [ ! -e "${workdir}/singularity_image/seqkit.sif" ]; then
+ wget -O "${workdir}/singularity_image/seqkit.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/seqkit.sif
+fi
+
 
 # 一時ファイルを配置するディレクトリをサンプルごとに作成
 mkdir -p ${tmpdir}/${prefix}
@@ -65,6 +70,10 @@ else
 fi
 
 done
+
+# Illuminaアダプター配列一覧を取得し、一致領域以降の配列を除去。デフォルトでは3塩基のみの一致でも配列除去してしまうので、10塩基以上一致に変更(--overlap 10)。
+adapter=`${singularity_path} run ${workdir}/singularity_image/seqkit.sif seqkit fx2tab $workdir/db/Sequencing_adaptors.fasta |awk -F" " '{print " -a "$2;}'|tr -d '\n'|sed s/" "//`
+${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt --overlap 10 ${adapter} -o ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
 
 # MiFishプライマーのリバース側の相補鎖以降の配列(Adapter Primerも含む)を除去
 ${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt -a CAAACTAGGATTAGATACCCCACTATG -o ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq

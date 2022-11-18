@@ -57,13 +57,17 @@ awk -F'\t' '
 
 
 # makeblastdb,アダプター配列の検索
-if [ ! -e "$sdir"/Sequencing_adaptors.fasta ]; then cp "$sdir"/Sequencing_adaptors.fasta .; fi
+if [ ! -e Sequencing_adaptors.fasta ]; then cp "$workdir"/db/Sequencing_adaptors.fasta .; fi
 ${singularity_path} run ${workdir}/singularity_image/blast.sif makeblastdb -dbtype nucl -in $db
 ${singularity_path} run ${workdir}/singularity_image/blast.sif blastn -db $db -query Sequencing_adaptors.fasta -outfmt 6 -max_target_seqs 10000000 -word_size 15|
  awk '{if($9<$10){print $2"\t"$9-1"\t"$10}else{print $2"\t"$10-1"\t"$9}}' > ${db}.adaptors.bed
 
 # アダプター配列のマスク
-${singularity_path} run ${workdir}/singularity_image/bedtools.sif bedtools maskfasta -fi $db -bed ${db}.adaptors.bed -fo ${db}.maskadaptors
+if [ `cat ${db}.adaptors.bed|wc -l` -gt 0 ]; then
+    ${singularity_path} run ${workdir}/singularity_image/bedtools.sif bedtools maskfasta -fi $db -bed ${db}.adaptors.bed -fo ${db}.maskadaptors
+else
+    cat ${db} > ${db}.maskadaptors
+fi
 
 # データベースに載っているアクセッションIDのリストを作成
 ${singularity_path} run ${workdir}/singularity_image/seqkit.sif seqkit fx2tab ${db}.maskadaptors|awk -F"\t" '{split($1,array,".");print array[1];}'|
