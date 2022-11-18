@@ -17,7 +17,8 @@ tmpdir=/tmp
 blastn_path="${workdir}"/script/blastn
 
 # MitoFishのBlast DBファイル
-blastdb="${workdir}"/db/complete_partial_mitogenomes.fa
+#blastdb="${workdir}"/db/complete_partial_mitogenomes.fa
+blastdb="${workdir}"/db/database.fasta
 
 # 魚種和名ファイルのPath
 fishname_ja_Path="${workdir}"/db/20210718_JAFList.xlsx

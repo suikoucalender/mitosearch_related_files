@@ -75,11 +75,13 @@ done
 adapter=`${singularity_path} run ${workdir}/singularity_image/seqkit.sif seqkit fx2tab $workdir/db/Sequencing_adaptors.fasta |awk -F" " '{print " -a "$2;}'|tr -d '\n'|sed s/" "//`
 ${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt --overlap 10 ${adapter} -o ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
 
-# MiFishプライマーのリバース側の相補鎖以降の配列(Adapter Primerも含む)を除去
-${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt -a CAAACTAGGATTAGATACCCCACTATG -o ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
-
 # FASTQからFATSTAファイルに変換
 awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq | sed 's/@/>/' > ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta
+
+#【cutadapt検証用】cutadaptされたリードの元の配列と処理後の配列を比較する。解析フローには不要。
+# MitoFishデータベースに対してBlastnで相同性検索を行う。
+# awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags.fastq | sed 's/@/>/' > ${tmpdir}/${prefix}/out.extendedFrags.fasta
+# awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=$2;}if(FILENAME==ARGV[2]&&list[$1]!=$2){a=list[$1];sub($2,"",a);print list[$1]"\t"$2"\t"a;}}' <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags.fasta <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta) > ../inputFiles/${prefix}.adapters
 
 # MitoFishデータベースに対してBlastnで相同性検索を行う。
 ${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 1 -out ${tmpdir}/${prefix}/blast.result
@@ -87,11 +89,44 @@ ${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.exte
 #Inputファイルのヘッダを書き込み
 echo -e "id\t${prefix}.fastq" > ${tmpdir}/${prefix}/${prefix}.input.tmp
 
-#Inputファイル書き込み
-cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100' | awk '$5 > 90' | awk '$6 / $3 > 0.9' | cut -f 1,16 | sort | uniq | cut -f 2 | sort | uniq -c | sort -r -n | awk 'BEGIN{OFS="\t"} {c="";for(i=2;i<=NF;i++) c=c $i" "; print c, $1}' >> ${tmpdir}/${prefix}/${prefix}.input.tmp
+# ハイスコアなblast結果のトップヒットを抽出し、アクセッションIDのリストに変換
+cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100 && $5 > 90 && $6/$3 > 0.9' | cut -f 1,2 | sort | uniq | cut -f 2 |
+ awk -F"\t" '{if(substr($1,1,1)=="g"){split($1,array,"|");{print array[2];}}else{split($1,array,".");{print array[1];}}}' > ${tmpdir}/${prefix}/blast.result2
 
-# inputファイルの修正
-# python2 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
-${singularity_path} run --bind ${outputFileDirPath}:${outputFileDirPath} --bind `dirname ${fishname_ja_Path}`:`dirname ${fishname_ja_Path}` ${workdir}/singularity_image/python_xlrd.sif python ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
-#docker run -i --rm -v ${outputFileDirPath}:${outputFileDirPath} -v ${workdir}:${workdir} -v ${workdir} -u `id -u`':'`id -g` c2997108/selenium-chrome:4.3.0_selenium_xlrd python3 ${scriptdir}/create_input.py ${prefix} ${outputFileDirPath} ${fishname_ja_Path} ${tmpdir}
+# アクセッションIDをtaxonomyに変換、ヒット数集計。魚類のみを抽出し、全体リードの1%未満のヒットは消去。taxonomyを学名に変換（交雑種は母方の学名のみ抽出）し、inputファイルの完成。
+awk -F"\t" '
+ BEGIN{list["accession"]="exist";list2["accession"]="taxid";list3["taxid"]="exist";list4["taxid"]="taxname";}
+ {
+  if(FILENAME==ARGV[1]){list[$1]=1;}
+  if(FILENAME==ARGV[2] && $1 in list){list2[$1]=$3;delete list[$1];list3[$3]=1;}
+  if(FILENAME==ARGV[3] && $1 in list3){list4[$1]=$2;delete list3[$1];}
+  if(FILENAME==ARGV[4]){$1=list4[list2[$1]];print $0;}
+ }' ${tmpdir}/${prefix}/blast.result2 $workdir/db/merged.fasta.maskadaptors.nucl_gb.accession2taxid $workdir/db/merged.fasta.maskadaptors.names.dmp ${tmpdir}/${prefix}//blast.result2 |
+ awk -F"\t" '
+  BEGIN{list["tax"]="num";}{if($1 in list){list[$1]=list[$1]+1;}else{list[$1]=1;}}
+  END{delete list["tax"];PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
+ ' | grep ";Craniata;" | grep -v ";Tetrapoda;" |
+ awk -F"\t" '{split($2,arr,";");if(arr[length(arr)]~" x "){split(arr[length(arr)],array," x ");print $1"\t"array[length(array)];}else{print $1"\t"arr[length(arr)];}}' |
+ awk -F"\t" '
+  BEGIN{list["tax"]="num";}
+  {if($2 in list){list[$2]+=$1;}else{list[$2]=$1;}}
+  END{delete list["tax"];PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
+ ' |
+ awk -F"\t" '
+  BEGIN{sum=0;}
+  {sum=sum+$1;list[$2]=$1;}
+  END{sum=sum/100;PROCINFO["sorted_in"]="@val_num_desc";for(i in list){if(list[i]>sum){print list[i]"\t"i;}}}
+ ' > ${tmpdir}/${prefix}/${prefix}.input
+
+# 和名変換。まず、データベース内で学名を完全に含むものを探す（稀に学名が3単語以上で構成され、亜種を示す場合がある）。それで見つからなかったものは、学名の上2単語を抽出してデータベースに照会する。
+awk -F"\t" '
+ {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){list[$1":"i]=list[i];delete list[i];}}}}
+ END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
+' ${tmpdir}/${prefix}/${prefix}.input $work/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input2
+awk -F"\t" '
+ {if(FILENAME==ARGV[1]){split($2,array," ");list[array[1]" "array[2]]=$1;}if(FILENAME==ARGV[2] && $2 in list){list[$1":"$2]=list[$2];delete list[$2];}}
+ END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
+' ${tmpdir}/${prefix}/${prefix}.input2 $work/db/scientificname2japanesename_2words.csv > ${outputFileDirPath}/${prefix}.input
+
+#一時ディレクトリ内の中間ファイルを消去
 rm -rf ${tmpdir}/${prefix}

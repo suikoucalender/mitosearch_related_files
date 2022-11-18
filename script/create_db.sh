@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # SSUなどのデータベースを更新する際、このスクリプトにかける。[cat SSU~.fa pr2~.fa mitofish.fa > ../db/mergedDB.fasta]とした後、このスクリプトでアダプター除去等を行う。
-# 使用法：bash create_db.sh [../db/mergedDB.fasta]
 
 set -ex
 unset LC_ALL
@@ -9,6 +8,9 @@ unset LC_ALL
 # フォルダ等の設定を読み込み
 sdir=$(dirname `readlink -f "$0" || echo "$0"`)
 source "$sdir"/config.sh
+
+mkdir /tmp/create_blast_db_tempdir
+cd /tmp/create_blast_db_tempdir
 
 #Singularityのイメージがなければ、githubのリリースから取ってくる。ファイルサイズが大きいのでソースコードには含められない。
 #singularity build seqkit.sif docker://quay.io/biocontainers/seqkit:2.3.1--h9ee0642_0
@@ -91,3 +93,8 @@ awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=1;}if(FILENAME==ARGV[2]){split($1,ar
 
 # makeblastdb
 ${singularity_path} run ${workdir}/singularity_image/blast.sif makeblastdb -dbtype nucl -max_file_sz 50MB -in database.fasta
+
+# 結果ファイルの移動、中間ファイル削除
+mv database.fasta* `dirname $blastdb`
+cd /
+rm -rf /tmp/create_blast_db_tempdir
