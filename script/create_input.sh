@@ -57,16 +57,13 @@ else
         cp ${edna_sequence_filedir}/${prefix}_1.fastq.gz ${tmpdir}/${prefix}
         gunzip ${tmpdir}/${prefix}/${prefix}_1.fastq.gz
         mv ${tmpdir}/${prefix}/${prefix}_1.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
-
     fi
 
     if [ -e ${edna_sequence_filedir}/${prefix}_2.fastq.gz ]; then
         cp ${edna_sequence_filedir}/${prefix}_2.fastq.gz ${tmpdir}/${prefix}
         gunzip ${tmpdir}/${prefix}/${prefix}_2.fastq.gz
         mv ${tmpdir}/${prefix}/${prefix}_2.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
-
     fi
-
 fi
 
 done
@@ -84,7 +81,7 @@ awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq | sed 
 # awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=$2;}if(FILENAME==ARGV[2]&&list[$1]!=$2){a=list[$1];sub($2,"",a);print list[$1]"\t"$2"\t"a;}}' <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags.fasta <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta) > ../inputFiles/${prefix}.adapters
 
 # MitoFishデータベースに対してBlastnで相同性検索を行う。
-${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 1 -out ${tmpdir}/${prefix}/blast.result
+${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 10 | awk -F'\t' 'a[$1]!=1{a[$1]=1; print $0}' > ${tmpdir}/${prefix}/blast.result
 
 #Inputファイルのヘッダを書き込み
 echo -e "id\t${prefix}.fastq" > ${tmpdir}/${prefix}/${prefix}.input.tmp
@@ -122,11 +119,11 @@ awk -F"\t" '
 awk -F"\t" '
  {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){list[$1":"i]=list[i];delete list[i];}}}}
  END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
-' ${tmpdir}/${prefix}/${prefix}.input $work/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input2
+' ${tmpdir}/${prefix}/${prefix}.input $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input2
 awk -F"\t" '
  {if(FILENAME==ARGV[1]){split($2,array," ");list[array[1]" "array[2]]=$1;}if(FILENAME==ARGV[2] && $2 in list){list[$1":"$2]=list[$2];delete list[$2];}}
  END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
-' ${tmpdir}/${prefix}/${prefix}.input2 $work/db/scientificname2japanesename_2words.csv > ${outputFileDirPath}/${prefix}.input
+' ${tmpdir}/${prefix}/${prefix}.input2 $workdir/db/scientificname2japanesename_2words.csv > ${outputFileDirPath}/${prefix}.input
 
 #一時ディレクトリ内の中間ファイルを消去
 rm -rf ${tmpdir}/${prefix}
