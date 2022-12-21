@@ -64,7 +64,7 @@ ${singularity_path} run ${workdir}/singularity_image/blast.sif makeblastdb -dbty
 ${singularity_path} run ${workdir}/singularity_image/blast.sif blastn -db $db -query Sequencing_adaptors.fasta -outfmt 6 -max_target_seqs 10000000 -word_size 15|
  awk '{if($9<$10){print $2"\t"$9-1"\t"$10}else{print $2"\t"$10-1"\t"$9}}' > ${db}.adaptors.bed
 
-# アダプター配列のマスク
+# アダプター配列がヒットした場合のみ、アダプター配列のマスク
 if [ `cat ${db}.adaptors.bed|wc -l` -gt 0 ]; then
     ${singularity_path} run -B /tmp:/tmp -W $PWD ${workdir}/singularity_image/bedtools.sif bedtools maskfasta -fi $db -bed ${db}.adaptors.bed -fo ${db}.maskadaptors
 else
@@ -97,5 +97,7 @@ ${singularity_path} run ${workdir}/singularity_image/blast.sif makeblastdb -dbty
 # 結果ファイルの移動、中間ファイル削除
 rm database.fasta
 mv database.fasta* `dirname $blastdb`
+mv ${db}.maskadaptors.nucl_gb.accession2taxid `dirname $blastdb`/merged.fasta.maskadaptors.nucl_gb.accession2taxid
+mv ${db}.maskadaptors.names.dmp `dirname $blastdb`/merged.fasta.maskadaptors.names.dmp
 cd /
 rm -rf /tmp/create_blast_db_tempdir

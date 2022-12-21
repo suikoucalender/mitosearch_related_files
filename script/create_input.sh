@@ -76,18 +76,18 @@ ${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt --ove
 awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq | sed 's/@/>/' > ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta
 
 #【cutadapt検証用】cutadaptされたリードの元の配列と処理後の配列を比較する。解析フローには不要。
-# MitoFishデータベースに対してBlastnで相同性検索を行う。
 # awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags.fastq | sed 's/@/>/' > ${tmpdir}/${prefix}/out.extendedFrags.fasta
 # awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=$2;}if(FILENAME==ARGV[2]&&list[$1]!=$2){a=list[$1];sub($2,"",a);print list[$1]"\t"$2"\t"a;}}' <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags.fasta <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta) > ../inputFiles/${prefix}.adapters
 
-# MitoFishデータベースに対してBlastnで相同性検索を行う。
+# データベースに対してBlastnで相同性検索を行う。
 ${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 10 | awk -F'\t' 'a[$1]!=1{a[$1]=1; print $0}' > ${tmpdir}/${prefix}/blast.result
 
 #Inputファイルのヘッダを書き込み
 echo -e "id\t${prefix}.fastq" > ${tmpdir}/${prefix}/${prefix}.input.tmp
 
 # ハイスコアなblast結果のトップヒットを抽出し、アクセッションIDのリストに変換
-cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100 && $5 > 90 && $6/$3 > 0.9' | cut -f 1,2 | sort | uniq | cut -f 2 |
+# リード長が100bpより大きく、一致率が90%より上、アライメントの長さがリードの90%もしくはDBの90%より大きいヒットを抽出
+cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100 && $5 > 90 && ($6/$3 > 0.9 || $6/$4 > 0.9)' | cut -f 1,2 | sort | uniq | cut -f 2 |
  awk -F"\t" '{if(substr($1,1,1)=="g"){split($1,array,"|");{print array[2];}}else{split($1,array,".");{print array[1];}}}' > ${tmpdir}/${prefix}/blast.result2
 
 # アクセッションIDをtaxonomyに変換、ヒット数集計。魚類のみを抽出し、全体リードの1%未満のヒットは消去。taxonomyを学名に変換（交雑種は母方の学名のみ抽出）し、inputファイルの完成。
@@ -115,15 +115,21 @@ awk -F"\t" '
   END{sum=sum/100;PROCINFO["sorted_in"]="@val_num_desc";for(i in list){if(list[i]>sum){print list[i]"\t"i;}}}
  ' > ${tmpdir}/${prefix}/${prefix}.input
 
-# 和名変換。まず、データベース内で学名を完全に含むものを探す（稀に学名が3単語以上で構成され、亜種を示す場合がある）。それで見つからなかったものは、学名の上2単語を抽出してデータベースに照会する。
+# 和名変換。まず、データベース内で学名が完全に一致する種を探す。これでヒットしなかった場合、属名が同じ種の科名を返す。
 awk -F"\t" '
- {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){list[$1":"i]=list[i];delete list[i];}}}}
- END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
+ {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){list2[$1":"i]=list[i];delete list[i];}}}}
+ END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list2){print list2[i]"\t"i;}}
 ' ${tmpdir}/${prefix}/${prefix}.input $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input2
+
 awk -F"\t" '
- {if(FILENAME==ARGV[1]){split($2,array," ");list[array[1]" "array[2]]=$1;}if(FILENAME==ARGV[2] && $2 in list){list[$1":"$2]=list[$2];delete list[$2];}}
+ {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){delete list[i];}}}}
+ END{for(i in list){print list[i]"\t"i;}}
+' ${tmpdir}/${prefix}/${prefix}.input ${tmpdir}/${prefix}/${prefix}.input2 > ${tmpdir}/${prefix}/${prefix}.input3
+awk -F"\t" '
+ {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){split(i,array," ");if($2~array[1]){list[$3":"i]=list[i];delete list[i];}}}}
  END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
-' ${tmpdir}/${prefix}/${prefix}.input2 $workdir/db/scientificname2japanesename_2words.csv > ${outputFileDirPath}/${prefix}.input
+' ${tmpdir}/${prefix}/${prefix}.input3 $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input4
+cat ${tmpdir}/${prefix}/${prefix}.input2 ${tmpdir}/${prefix}/${prefix}.input4| awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}' > ${outputFileDirPath}/${prefix}.input
 
 #一時ディレクトリ内の中間ファイルを消去
-rm -rf ${tmpdir}/${prefix}
+#rm -rf ${tmpdir}/${prefix}
