@@ -1,7 +1,7 @@
 # ------------
 
 # 作業ディレクトリを指定
-workdir=/home/yoshitake/mitosearch_related_files
+workdir=/mnt/n3data/mitosearch_related_files
 
 #projectのPATH
 mitosearch_path=/home/yoshitake/mitosearch/Mitosearch

@@ -17,7 +17,7 @@ set -ex
 set -o pipefail
 
 # FASTQダウンロード
-${singularity_path} run ${workdir}/singularity_image/sratoolkit.sif fastq-dump ${id} --gzip --split-files --outdir ${workdir}/fastq/
+${singularity_path} run -B ${workdir}/fastq/ ${workdir}/singularity_image/sratoolkit.sif fastq-dump ${id} --gzip --split-files --outdir ${workdir}/fastq/
 
 # 新しく取得したSRA番号のメタデータを取得
 set +x
