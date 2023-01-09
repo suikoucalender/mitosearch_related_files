@@ -129,7 +129,10 @@ awk -F"\t" '
  {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){split(i,array," ");if($2~array[1]){list[$3":"i]=list[i];delete list[i];}}}}
  END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
 ' ${tmpdir}/${prefix}/${prefix}.input3 $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input4
-cat ${tmpdir}/${prefix}/${prefix}.input2 ${tmpdir}/${prefix}/${prefix}.input4| awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}' > ${outputFileDirPath}/${prefix}.input
+cat ${tmpdir}/${prefix}/${prefix}.input2 ${tmpdir}/${prefix}/${prefix}.input4|
+ awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}'|
+ awk -F'\t' '{if(FNR==1){print "id\t'${prefix}'.fastq"}; n[NR]=$2; v[NR]=$1; cnt+=$1} END{for(i=1;i<=NR;i++){print n[i]"\t"v[i]/cnt*100}}' > ${outputFileDirPath}/${prefix}.input
+if [ ! -s ${outputFileDirPath}/${prefix}.input ]; then rm -f ${outputFileDirPath}/${prefix}.input; fi
 
 #一時ディレクトリ内の中間ファイルを消去
-#rm -rf ${tmpdir}/${prefix}
+rm -rf ${tmpdir}/${prefix}
