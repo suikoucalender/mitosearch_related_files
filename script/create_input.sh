@@ -130,7 +130,11 @@ awk -F"\t" '
  END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
 ' ${tmpdir}/${prefix}/${prefix}.input3 $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input4
 cat ${tmpdir}/${prefix}/${prefix}.input2 ${tmpdir}/${prefix}/${prefix}.input4|
- awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}'|
+ awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}' > ${tmpdir}/${prefix}/${prefix}.input5
+
+#100リード未満のヒット数のデータを削除し、合計を100%にする
+cat ${tmpdir}/${prefix}/${prefix}.input5|
+ awk -F'\t' '{a+=$1; d[NR]=$0} END{if(a>=100){for(i=1;i<=NR;i++){print d[i]}}}'|
  awk -F'\t' '{if(FNR==1){print "id\t'${prefix}'.fastq"}; n[NR]=$2; v[NR]=$1; cnt+=$1} END{for(i=1;i<=NR;i++){print n[i]"\t"v[i]/cnt*100}}' > ${outputFileDirPath}/${prefix}.input
 if [ ! -s ${outputFileDirPath}/${prefix}.input ]; then rm -f ${outputFileDirPath}/${prefix}.input; fi
 
