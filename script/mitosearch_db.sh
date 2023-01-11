@@ -60,7 +60,7 @@ while [ `qstat|grep mitoupda|wc -l` -gt 0 ]; do
 done
 
 # 円グラフが日付順にでてくるように日付でソート
-sort -t$'\t' -k3,3 ${workdir}/data/lat-long-date.txt > ${workdir}/data/lat-long-date.txt.tmp
+sort -t$'\t' -k3,3 -k1,1V ${workdir}/data/lat-long-date.txt > ${workdir}/data/lat-long-date.txt.tmp
 mv ${workdir}/data/lat-long-date.txt.tmp ${workdir}/data/lat-long-date.txt
 
 # テスト環境にデータをコピー
