@@ -45,6 +45,7 @@ awk -F'\t' 'FILENAME==ARGV[1]&&$1!=""{n++; a[$1]=1} FILENAME==ARGV[2]&&$1!=""{if
 cp -rp ${workdir}/data ${workdir}/backup/${timestamp}/workfile
 
 # FASTQダウンロードとinputFile作成 xargsを使って5つ並列実行
+# download_fastq.shの中でlat-long-date.txtにも情報が追加される
 IFS=$'\n'
 
 set +e
@@ -57,6 +58,10 @@ set -e
 while [ `qstat|grep mitoupda|wc -l` -gt 0 ]; do
  sleep 10
 done
+
+# 円グラフが日付順にでてくるように日付でソート
+sort -t$'\t' -k3,3 ${workdir}/data/lat-long-date.txt > ${workdir}/data/lat-long-date.txt.tmp
+mv ${workdir}/data/lat-long-date.txt.tmp ${workdir}/data/lat-long-date.txt
 
 # テスト環境にデータをコピー
 cp -p ${workdir}/inputFiles/*.input ${mitosearch_dev_db}
