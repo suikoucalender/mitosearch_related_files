@@ -30,8 +30,9 @@ cp -p  ${metadataDir}/lat-long-date.txt ${workdir}/data/ || true
 #fi
 
 # MiFishプライマーでヒットしたSRA番号のリストを取得
-docker run -i --rm -v "$workdir":"$workdir" -w "$workdir" c2997108/selenium-chrome:4.3.0_selenium_xlrd bash ${workdir}/script/download_metadata.sh
-mv ${workdir}/SraAccList.txt ${workdir}/download/SraAccList.txt
+#docker run -i --rm -v "$workdir":"$workdir" -w "$workdir" c2997108/selenium-chrome:4.3.0_selenium_xlrd bash ${workdir}/script/download_metadata.sh
+#mv ${workdir}/SraAccList.txt ${workdir}/download/SraAccList.txt
+docker run -t --rm ncbi/blast:2.13.0 bash -c "esearch -db sra -query mifish|efetch -format runinfo" | cut -f 1 -d , |tail -n+2 > ${workdir}/download/SraAccList.txt
 
 # lat-long-date.txtから既にダウンロードされているサンプルのSRA番号を取得
 cat ${workdir}/data/lat-long-date.txt | cut -f 1 > ${workdir}/data/exist_samples.txt
