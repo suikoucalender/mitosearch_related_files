@@ -1,6 +1,6 @@
 //准备关联数组
 var fs = require("fs");
-var arrSpnameSinica=fs.readFileSync('/System/Volumes/Data/home/2544842260/Public/addChineseName/spnameSinicaDB_SimplifedChinese_RoughlyManuallyInspected.txt');
+var arrSpnameSinica=fs.readFileSync('spnameSinicaDB_SimplifedChinese_RoughlyManuallyInspected.txt');
 
 arrSpnameSinica=(String(arrSpnameSinica)).split("\r\n");
 var arrSpnameSinicaLength=arrSpnameSinica.length;
