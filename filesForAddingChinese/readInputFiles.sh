@@ -1,10 +1,10 @@
 #！/bin/bash
-path=mitoinput/.
+path=input/.
 files=$(ls $path)
 
 for filename in $files
 do
-    node createFiles.js mitoinput/$filename > /System/Volumes/Data/home/2544842260/Public/addChineseName/mitoSinicaName/$filename
+    node createFiles.js input/$filename > output/$filename
 done
 
 
