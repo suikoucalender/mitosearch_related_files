@@ -32,7 +32,11 @@ cp -p  ${metadataDir}/lat-long-date.txt ${workdir}/data/ || true
 # MiFishプライマーでヒットしたSRA番号のリストを取得
 #docker run -i --rm -v "$workdir":"$workdir" -w "$workdir" c2997108/selenium-chrome:4.3.0_selenium_xlrd bash ${workdir}/script/download_metadata.sh
 #mv ${workdir}/SraAccList.txt ${workdir}/download/SraAccList.txt
-docker run -t --rm ncbi/blast:2.13.0 bash -c "esearch -db sra -query mifish|efetch -format runinfo" | cut -f 1 -d , |tail -n+2 > ${workdir}/download/SraAccList.txt
+docker run -t --rm ncbi/blast:2.13.0 bash -c "esearch -db sra -query mifish|efetch -format runinfo" | cut -f 1 -d , |grep -v "^Run$" > ${workdir}/download/SraAccList.txt.temp1
+docker run -t --rm ncbi/blast:2.13.0 bash -c "esearch -db bioproject -query mifish|efetch -format native" |grep "^BioProject Accession:"|awk '{print $3}'|while read i; do
+ docker run -t --rm ncbi/blast:2.13.0 bash -c "esearch -db sra -query $i|efetch -format runinfo"
+done | cut -f 1 -d , |grep -v "^Run$" > ${workdir}/download/SraAccList.txt.temp2
+cat ${workdir}/download/SraAccList.txt.temp1 ${workdir}/download/SraAccList.txt.temp2 |sort|uniq > ${workdir}/download/SraAccList.txt
 
 # lat-long-date.txtから既にダウンロードされているサンプルのSRA番号を取得
 cat ${workdir}/data/lat-long-date.txt | cut -f 1 > ${workdir}/data/exist_samples.txt
@@ -64,9 +68,9 @@ done
 sort -t$'\t' -k3,3 -k1,1V ${workdir}/data/lat-long-date.txt > ${workdir}/data/lat-long-date.txt.tmp
 mv ${workdir}/data/lat-long-date.txt.tmp ${workdir}/data/lat-long-date.txt
 
-# テスト環境にデータをコピー
-cp -p ${workdir}/inputFiles/*.input ${mitosearch_dev_db}
-cp -p ${workdir}/data/lat-long-date.txt ${metadataDir_dev}
+# テスト環境にデータをコピー 2023/2 国際化のテストでディレクトリ名が変更になるの一時中止
+#cp -p ${workdir}/inputFiles/*.input ${mitosearch_dev_db}
+#cp -p ${workdir}/data/lat-long-date.txt ${metadataDir_dev}
 # 本番環境にデータをコピー
 cp -p ${workdir}/inputFiles/*.input ${mitosearch_db}
 cp -p ${workdir}/data/lat-long-date.txt ${metadataDir}

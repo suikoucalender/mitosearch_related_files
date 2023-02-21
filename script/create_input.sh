@@ -69,8 +69,8 @@ fi
 done
 
 # Illuminaアダプター配列一覧を取得し、一致領域以降の配列を除去。デフォルトでは3塩基のみの一致でも配列除去してしまうので、10塩基以上一致に変更(--overlap 10)。
-adapter=`${singularity_path} run ${workdir}/singularity_image/seqkit.sif seqkit fx2tab $workdir/db/Sequencing_adaptors.fasta |awk -F" " '{print " -a "$2;}'|tr -d '\n'|sed s/" "//`
-${singularity_path} run ${workdir}/singularity_image/cutadapt.sif cutadapt --overlap 10 ${adapter} -j 8 -o ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
+adapter=`${singularity_path} run -B "$workdir" ${workdir}/singularity_image/seqkit.sif seqkit fx2tab $workdir/db/Sequencing_adaptors.fasta |awk -F" " '{print " -a "$2;}'|tr -d '\n'|sed s/" "//`
+${singularity_path} run -B "$workdir" ${workdir}/singularity_image/cutadapt.sif cutadapt --overlap 10 ${adapter} -j 8 -o ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq ${tmpdir}/${prefix}/out.extendedFrags.fastq
 
 # FASTQからFATSTAファイルに変換
 awk '(NR - 1) % 4 < 2' ${tmpdir}/${prefix}/out.extendedFrags_trimed.fastq | sed 's/@/>/' > ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta
