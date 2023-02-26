@@ -34,8 +34,8 @@ metadataDir_dev="$mitosearch_dev_path"/data/fish
 # Scriptが配置されているディレクトリ
 scriptdir="${workdir}"/script
 
-# サンプルデータを配置するディレクトリ(各ディレクトリでファイルの重複がないようにする必要がある)
-edna_file_list=(${workdir}/fastq)
+# FASTQデータを配置するディレクトリ
+edna_file="${workdir}/fastq"
 
 # inputファイルの出力先ディレクトリ
 outputFileDirPath=${workdir}/inputFiles
