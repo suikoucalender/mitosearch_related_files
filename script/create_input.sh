@@ -136,7 +136,7 @@ if [ `awk -F'\t' '{a+=$1} END{print a}' ${tmpdir}/${prefix}/${prefix}.input.temp
 
 #合計を100%にする
 cat ${tmpdir}/${prefix}/${prefix}.input.temp|
- awk -F'\t' '{if(FNR==1){print "id\t'${prefix}'.fastq"}; n[NR]=$2; v[NR]=$1; cnt+=$1} END{for(i=1;i<=NR;i++){print n[i]"\t"v[i]/cnt*100}}' > "${tmpdir}/${prefix}/${prefix}.input"
+ awk -F'\t' '{if(FNR==1){print "id\t'${prefix}'"}; n[NR]=$2; v[NR]=$1; cnt+=$1} END{for(i=1;i<=NR;i++){print n[i]"\t"v[i]/cnt*100}}' > "${tmpdir}/${prefix}/${prefix}.input"
 
 # 和名変換。まず、データベース内で学名が完全に一致する種を探す。これでヒットしなかった場合、属名が同じ種の科名を返す。
 awk -F'\t' '
@@ -154,33 +154,25 @@ awk -F'\t' '
 node ${workdir}/filesForAddingChinese/createFiles.js "${tmpdir}/${prefix}/${prefix}.input" > "${tmpdir}/${prefix}/${prefix}.input2.zh"
 
 # 英語のcommon nameに変換
-#mkdir /tmp/db-fish-en
-#for i in *.input; do awk -F'\t' 'FILENAME==ARGV[1]{name[$2]=$3} FILENAME==ARGV[2]{OFS="\t"; if($1 in name){$1="["name[$1]"]: "$1}; print $0}' ~/yoshitake/names.dmp.sname-common_name $i > /tmp/db-fish-en/$i; done
+awk -F'\t' '
+ FILENAME==ARGV[1]{name[$2]=$3}
+ FILENAME==ARGV[2]{OFS="\t"; if($1 in name){$1="["name[$1]"]: "$1}; print $0}
+' "$workdir"/db/names.dmp.sname-common_name "${tmpdir}/${prefix}/${prefix}.input" > "${tmpdir}/${prefix}/${prefix}.input2.en"
 
-#awk -F"\t" '
-# {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){list2[$1":"i]=list[i];delete list[i];}}}}
-# END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list2){print list2[i]"\t"i;}}
-#' ${tmpdir}/${prefix}/${prefix}.input $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input2
+#mv "${tmpdir}/${prefix}/${prefix}.input2" "${workdir}/inputFiles/db_fish_ja/${prefix}.input"
+#mv "${tmpdir}/${prefix}/${prefix}.input2.zh" "${workdir}/inputFiles/db_fish_zh/${prefix}.input"
+#mv "${tmpdir}/${prefix}/${prefix}.input2.en" "${workdir}/inputFiles/db_fish_en/${prefix}.input"
+#mv ${tmpdir}/${prefix}/$prefix.blast.txt "$workdir"/blastresult/
 
-#awk -F"\t" '
-# {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){delete list[i];}}}}
-# END{for(i in list){print list[i]"\t"i;}}
-#' ${tmpdir}/${prefix}/${prefix}.input ${tmpdir}/${prefix}/${prefix}.input2 > ${tmpdir}/${prefix}/${prefix}.input3
-#awk -F"\t" '
-# {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){split(i,array," ");if($2~array[1]){list[$3":"i]=list[i];delete list[i];}}}}
-# END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
-#' ${tmpdir}/${prefix}/${prefix}.input3 $workdir/db/scientificname2japanesename_complete.csv > ${tmpdir}/${prefix}/${prefix}.input4
-#cat ${tmpdir}/${prefix}/${prefix}.input2 ${tmpdir}/${prefix}/${prefix}.input4|
-# awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}' > ${tmpdir}/${prefix}/${prefix}.input5
-
-mv "${tmpdir}/${prefix}/${prefix}.input2" "${workdir}/inputFiles/db_fish_ja/${prefix}.input"
-mv "${tmpdir}/${prefix}/${prefix}.input2.zh" "${workdir}/inputFiles/db_fish_zh/${prefix}.input"
-mv "${tmpdir}/${prefix}/${prefix}.input2.en" "${workdir}/inputFiles/db_fish_en/${prefix}.input"
-#mv ${tmpdir}/${prefix}/$prefix.blast.txt ${outputFileDirPath}/
 fi
 fi
 
-#if [ ! -s ${outputFileDirPath}/${prefix}.input ]; then rm -f ${outputFileDirPath}/${prefix}.input; fi
+#結果ファイルが空っぽなら消す
+if [ ! -s "${workdir}"/inputFiles/db_fish_ja/${prefix}.input ]; then rm -f "${workdir}"/inputFiles/db_fish_ja/${prefix}.input; fi
+if [ ! -s "${workdir}"/inputFiles/db_fish_zh/${prefix}.input ]; then rm -f "${workdir}"/inputFiles/db_fish_zh/${prefix}.input; fi
+if [ ! -s "${workdir}"/inputFiles/db_fish_en/${prefix}.input ]; then rm -f "${workdir}"/inputFiles/db_fish_en/${prefix}.input; fi
 
 #一時ディレクトリ内の中間ファイルを消去
 #rm -rf ${tmpdir}/${prefix}
+
+echo finish

@@ -13,21 +13,16 @@ mkdir -p ${workdir}/data
 mkdir -p ${workdir}/download
 mkdir -p ${workdir}/fastq
 mkdir -p ${workdir}/tmp
-mkdir -p ${workdir}/inputFiles
+mkdir -p ${workdir}/inputFiles/db_fish_ja ${workdir}/inputFiles/db_fish_zh ${workdir}/inputFiles/db_fish_en
 
 # Backupを取得 本番環境のほうをバックアップ
 timestamp=$(date "+%Y%m%d-%H%M")
 mkdir -p ${workdir}/backup/${timestamp}/inputFiles
-cp -rp ${mitosearch_db}/*.input ${workdir}/backup/${timestamp}/inputFiles || true
+cp -rp ${mitosearch_db}/* ${workdir}/backup/${timestamp}/inputFiles || true
 cp -rp ${metadataDir} ${workdir}/backup/${timestamp} || true
 
 # metadataを作業ディレクトリにコピー
 cp -p  ${metadataDir}/lat-long-date.txt ${workdir}/data/ || true
-
-# 過去のメタデータを削除
-#if [ -e ${workdir}/download/SraAccList.txt ]; then
-#    rm -f ${workdir}/download/SraAccList.txt
-#fi
 
 # MiFishプライマーでヒットしたSRA番号のリストを取得
 #docker run -i --rm -v "$workdir":"$workdir" -w "$workdir" c2997108/selenium-chrome:4.3.0_selenium_xlrd bash ${workdir}/script/download_metadata.sh
@@ -69,10 +64,10 @@ sort -t$'\t' -k3,3 -k1,1V ${workdir}/data/lat-long-date.txt > ${workdir}/data/la
 mv ${workdir}/data/lat-long-date.txt.tmp ${workdir}/data/lat-long-date.txt
 
 # テスト環境にデータをコピー 2023/2 国際化のテストでディレクトリ名が変更になるの一時中止
-#cp -p ${workdir}/inputFiles/*.input ${mitosearch_dev_db}
-#cp -p ${workdir}/data/lat-long-date.txt ${metadataDir_dev}
+cp -rp ${workdir}/inputFiles/* ${mitosearch_dev_db}
+cp -p ${workdir}/data/lat-long-date.txt ${metadataDir_dev}
 # 本番環境にデータをコピー
-cp -p ${workdir}/inputFiles/*.input ${mitosearch_db}
+cp -rp ${workdir}/inputFiles/* ${mitosearch_db}
 cp -p ${workdir}/data/lat-long-date.txt ${metadataDir}
 # inputFileを削除
 #rm -f ${workdir}/inputFiles/*.input
