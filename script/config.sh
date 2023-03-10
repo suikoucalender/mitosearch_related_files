@@ -38,4 +38,4 @@ scriptdir="${workdir}"/script
 edna_file="${workdir}/fastq"
 
 # inputファイルの出力先ディレクトリ
-outputFileDirPath=${workdir}/inputFiles
+#outputFileDirPath=${workdir}/inputFiles

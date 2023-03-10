@@ -95,8 +95,8 @@ awk 'END{print "blast hits: "NR}' ${tmpdir}/${prefix}/blast.result >> "$logfile"
 
 # ハイスコアなblast結果のトップヒットを抽出し、アクセッションIDのリストに変換
 # リード長が100bpより大きく、一致率が90%より上、アライメントの長さがリードの90%もしくはDBの90%より大きいヒットを抽出
-cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100 && $5 > 90 && ($6/$3 > 0.9 || $6/$4 > 0.9)' | cut -f 1,2 | sort | uniq | cut -f 2 |
- awk -F"\t" '{if(substr($1,1,1)=="g"){split($1,array,"|");{print array[2];}}else{split($1,array,".");{print array[1];}}}' > ${tmpdir}/${prefix}/blast.result2
+cat ${tmpdir}/${prefix}/blast.result | awk '$3 > 100 && $5 > 90 && ($6/$3 > 0.9 || $6/$4 > 0.9)' |
+ awk -F"\t" '{if(substr($2,1,1)=="g"){split($2,array,"|");{print array[2]"\t"$0;}}else{split($2,array,".");{print array[1]"\t"$0;}}}' > ${tmpdir}/${prefix}/blast.result2
 awk 'END{print "after blast hits filtering: "NR}' ${tmpdir}/${prefix}/blast.result2 >> "$logfile"
 
 # アクセッションIDをtaxonomyに変換、ヒット数集計。魚類のみを抽出し、全体リードの1%未満のヒットは消去。taxonomyを学名に変換（交雑種は母方の学名のみ抽出）し、inputファイルの完成。
@@ -106,8 +106,9 @@ awk -F"\t" '
   if(FILENAME==ARGV[1]){list[$1]=1;}
   if(FILENAME==ARGV[2] && $1 in list){list2[$1]=$3;delete list[$1];list3[$3]=1;}
   if(FILENAME==ARGV[3] && $1 in list3){list4[$1]=$2;delete list3[$1];}
-  if(FILENAME==ARGV[4]){$1=list4[list2[$1]];print $0;}
- }' ${tmpdir}/${prefix}/blast.result2 $workdir/db/merged.fasta.maskadaptors.nucl_gb.accession2taxid $workdir/db/merged.fasta.maskadaptors.names.dmp ${tmpdir}/${prefix}//blast.result2 |
+  if(FILENAME==ARGV[4]){OFS="\t"; $1=list4[list2[$1]]"\t"$1;print $0;}
+ }' ${tmpdir}/${prefix}/blast.result2 $workdir/db/merged.fasta.maskadaptors.nucl_gb.accession2taxid $workdir/db/merged.fasta.maskadaptors.names.dmp ${tmpdir}/${prefix}//blast.result2 > ${tmpdir}/${prefix}/$prefix.blast.txt
+cut -f 1 ${tmpdir}/${prefix}/$prefix.blast.txt |
  awk -F"\t" '
   BEGIN{list["tax"]="num";}{if($1 in list){list[$1]=list[$1]+1;}else{list[$1]=1;}}
   END{delete list["tax"];PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}
@@ -149,6 +150,13 @@ awk -F'\t' '
  }
 ' "$workdir/db/scientificname2japanesename_complete.csv" "${tmpdir}/${prefix}/${prefix}.input" > "${tmpdir}/${prefix}/${prefix}.input2"
 
+# 中国語に変換
+node ${workdir}/filesForAddingChinese/createFiles.js "${tmpdir}/${prefix}/${prefix}.input" > "${tmpdir}/${prefix}/${prefix}.input2.zh"
+
+# 英語のcommon nameに変換
+#mkdir /tmp/db-fish-en
+#for i in *.input; do awk -F'\t' 'FILENAME==ARGV[1]{name[$2]=$3} FILENAME==ARGV[2]{OFS="\t"; if($1 in name){$1="["name[$1]"]: "$1}; print $0}' ~/yoshitake/names.dmp.sname-common_name $i > /tmp/db-fish-en/$i; done
+
 #awk -F"\t" '
 # {if(FILENAME==ARGV[1]){list[$2]=$1;}if(FILENAME==ARGV[2]){for(i in list){if($2~i){list2[$1":"i]=list[i];delete list[i];}}}}
 # END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list2){print list2[i]"\t"i;}}
@@ -165,12 +173,14 @@ awk -F'\t' '
 #cat ${tmpdir}/${prefix}/${prefix}.input2 ${tmpdir}/${prefix}/${prefix}.input4|
 # awk -F"\t" '{list[$2]=$1;}END{PROCINFO["sorted_in"]="@val_num_desc";for(i in list){print list[i]"\t"i;}}' > ${tmpdir}/${prefix}/${prefix}.input5
 
-mv "${tmpdir}/${prefix}/${prefix}.input2" "${outputFileDirPath}/${prefix}.input"
-
+mv "${tmpdir}/${prefix}/${prefix}.input2" "${workdir}/inputFiles/db_fish_ja/${prefix}.input"
+mv "${tmpdir}/${prefix}/${prefix}.input2.zh" "${workdir}/inputFiles/db_fish_zh/${prefix}.input"
+mv "${tmpdir}/${prefix}/${prefix}.input2.en" "${workdir}/inputFiles/db_fish_en/${prefix}.input"
+#mv ${tmpdir}/${prefix}/$prefix.blast.txt ${outputFileDirPath}/
 fi
 fi
 
 #if [ ! -s ${outputFileDirPath}/${prefix}.input ]; then rm -f ${outputFileDirPath}/${prefix}.input; fi
 
 #一時ディレクトリ内の中間ファイルを消去
-rm -rf ${tmpdir}/${prefix}
+#rm -rf ${tmpdir}/${prefix}
