@@ -53,6 +53,13 @@ done
 #cat *.fasta *.fna mito-all > mergedDB.fa
 
 cp "$sdir"/../db/MiFish_DB_v47.2.fas .
+
+#silva
+wget https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta.gz
+wget https://www.arb-silva.de/fileadmin/silva_databases/current/Exports/SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta.gz
+zcat SILVA_138.1_LSURef_NR99_tax_silva_trunc.fasta.gz|awk '{if($0~"^>"){print ">SILVA-LSU_"substr($0,2)}else{print $0}}' > SILVA_138.1_LSURef_NR99_tax_silva_trunc.mod.fasta
+zcat SILVA_138.1_SSURef_NR99_tax_silva_trunc.fasta.gz|awk '{if($0~"^>"){print ">SILVA-SSU_"substr($0,2)}else{print $0}}' > SILVA_138.1_SSURef_NR99_tax_silva_trunc.mod.fasta
+
 cat *.fasta *.fna *.fas > mergedDB.fa
 
 db=mergedDB.fa
@@ -67,6 +74,9 @@ awk -F'\t' '
  END{for(i in name){str=name[i]; key=parent[i]; while(1){if(key==1){str=name[key]";"str; break}; str=name[key]";"str; key=parent[key]}; print i"\t"str}}
 ' nodes.dmp names.dmp.sname > names.dmp.sname.path
 
+cat SILVA_138.1_LSURef_NR99_tax_silva_trunc.mod.fasta SILVA_138.1_SSURef_NR99_tax_silva_trunc.mod.fasta|
+ grep "^>"|awk -F';' '{split(substr($0,2),arr,"."); print arr[1]"\t"$NF}'|sed 's/ [(].*//'|
+ awk -F'\t' 'FILENAME==ARGV[1]{taxid[$3]=$1} FILENAME==ARGV[2]{print $0"\t"taxid[$2]}' names.dmp /dev/stdin > silva.accession2taxid
 
 # makeblastdb,アダプター配列の検索
 if [ ! -e Sequencing_adaptors.fasta ]; then cp "$sdir"/../db/Sequencing_adaptors.fasta .; fi
@@ -88,7 +98,7 @@ ${singularity_path} run "$sdir"/../singularity_image/seqkit.sif seqkit fx2tab ${
 cut -f 1 ${db}.maskadaptors.short-long-accessionID > ${db}.maskadaptors.accessionID
 
 # 上のリストに対応するacc2taxidデータベースの抽出
-awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=1;}if(FILENAME==ARGV[2]&&$1 in list){print;}}' ${db}.maskadaptors.accessionID <(zcat nucl_gb.accession2taxid.gz) > ${db}.maskadaptors.nucl_gb.accession2taxid
+awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=1;}if(FILENAME==ARGV[2]&&$1 in list){print;}}' ${db}.maskadaptors.accessionID <(zcat nucl_gb.accession2taxid.gz; cat silva.accession2taxid) > ${db}.maskadaptors.nucl_gb.accession2taxid
 
 # 2つ上で抽出したaccession2taxidリストに対応するnames.dumpを抽出
 awk -F"\t" '{if(FILENAME==ARGV[1]){list[$3]=1;}if(FILENAME==ARGV[2]&&$1 in list){print;}}' ${db}.maskadaptors.nucl_gb.accession2taxid names.dmp.sname.path > ${db}.maskadaptors.names.dmp
@@ -99,11 +109,6 @@ awk -F'\t' '
  FILENAME==ARGV[2]{tax2name[$1]=$2}
  FILENAME==ARGV[3]{if(!($1 in acc2tax)||($1 in acc2tax && !(acc2tax[$1] in tax2name))){print $1 > "removed_accessionID.txt"}else{print $2"\t"tax2name[acc2tax[$1]]}}
 ' ${db}.maskadaptors.nucl_gb.accession2taxid ${db}.maskadaptors.names.dmp ${db}.maskadaptors.short-long-accessionID > ${db}.maskadaptors.path
-awk -F'\t' '
- FILENAME==ARGV[1]{acc2tax[$1]=$3}
- FILENAME==ARGV[2]{tax2name[$1]=$2}
- FILENAME==ARGV[3]{if(!($1 in acc2tax)||($1 in acc2tax && !(acc2tax[$1] in tax2name))){print $1}}
-' ${db}.maskadaptors.nucl_gb.accession2taxid ${db}.maskadaptors.names.dmp ${db}.maskadaptors.accessionID > removed_accessionID.txt
 
 # データベースをタブ区切りにして保存
 ${singularity_path} run "$sdir"/../singularity_image/seqkit.sif seqkit fx2tab ${db}.maskadaptors > ${db}.maskadaptors.tab
@@ -115,6 +120,7 @@ awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=1;}if(FILENAME==ARGV[2]){split($1,ar
 # makeblastdb
 ${singularity_path} run "$sdir"/../singularity_image/blast.sif makeblastdb -dbtype nucl -max_file_sz 50MB -in database.fasta
 
+exit
 # 結果ファイルの移動、中間ファイル削除
 rm database.fasta
 mv database.fasta* "$sdir"/../db
