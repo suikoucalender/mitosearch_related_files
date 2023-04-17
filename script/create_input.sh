@@ -159,10 +159,11 @@ awk -F'\t' '
  FILENAME==ARGV[2]{OFS="\t"; if($1 in name){$1="["name[$1]"]: "$1}; print $0}
 ' "$workdir"/db/names.dmp.sname-common_name "${tmpdir}/${prefix}/${prefix}.input" > "${tmpdir}/${prefix}/${prefix}.input2.en"
 
-#mv "${tmpdir}/${prefix}/${prefix}.input2" "${workdir}/inputFiles/db_fish_ja/${prefix}.input"
-#mv "${tmpdir}/${prefix}/${prefix}.input2.zh" "${workdir}/inputFiles/db_fish_zh/${prefix}.input"
-#mv "${tmpdir}/${prefix}/${prefix}.input2.en" "${workdir}/inputFiles/db_fish_en/${prefix}.input"
-#mv ${tmpdir}/${prefix}/$prefix.blast.txt "$workdir"/blastresult/
+mv "${tmpdir}/${prefix}/${prefix}.input2" "${workdir}/inputFiles/db_fish_ja/${prefix}.input"
+mv "${tmpdir}/${prefix}/${prefix}.input2.zh" "${workdir}/inputFiles/db_fish_zh/${prefix}.input"
+mv "${tmpdir}/${prefix}/${prefix}.input2.en" "${workdir}/inputFiles/db_fish_en/${prefix}.input"
+gzip ${tmpdir}/${prefix}/$prefix.blast.txt
+mv ${tmpdir}/${prefix}/$prefix.blast.txt.gz "$workdir"/blastresult/
 
 fi
 fi
@@ -173,6 +174,6 @@ if [ ! -s "${workdir}"/inputFiles/db_fish_zh/${prefix}.input ]; then rm -f "${wo
 if [ ! -s "${workdir}"/inputFiles/db_fish_en/${prefix}.input ]; then rm -f "${workdir}"/inputFiles/db_fish_en/${prefix}.input; fi
 
 #一時ディレクトリ内の中間ファイルを消去
-#rm -rf ${tmpdir}/${prefix}
+rm -rf ${tmpdir}/${prefix}
 
 echo finish

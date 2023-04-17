@@ -1,5 +1,9 @@
 #!/bin/bash
 
+#手動実行する場合
+#/usr/bin/bash /home/yoshitake/mitosearch_related_files/script/mitosearch_db.sh 2>&1 | tee /home/yoshitake/mitosearch_related_files/log/$(date "+%Y%m%d-%H%M").log
+#全データを再解析するときは、${workdir}/data/lat-long-date.txtを消してからファイルを作って実行すればOK
+
 # フォルダ等の設定を読み込み
 sdir=$(dirname `readlink -f "$0" || echo "$0"`)
 source "$sdir"/config.sh
@@ -8,7 +12,7 @@ source "$sdir"/config.sh
 set -ex
 
 # git pullで拾ってこないディレクトリを無ければ作る
-mkdir -p $mitosearch_db
+#mkdir -p $mitosearch_path/db_fish_ja $mitosearch_path/db_fish_zh $mitosearch_path/db_fish_en
 mkdir -p ${workdir}/data
 mkdir -p ${workdir}/download
 mkdir -p ${workdir}/fastq
@@ -18,11 +22,11 @@ mkdir -p ${workdir}/inputFiles/db_fish_ja ${workdir}/inputFiles/db_fish_zh ${wor
 # Backupを取得 本番環境のほうをバックアップ
 timestamp=$(date "+%Y%m%d-%H%M")
 mkdir -p ${workdir}/backup/${timestamp}/inputFiles
-cp -rp ${mitosearch_db}/* ${workdir}/backup/${timestamp}/inputFiles || true
+cp -rp ${mitosearch_path}/db_fish* ${workdir}/backup/${timestamp}/inputFiles || true
 cp -rp ${metadataDir} ${workdir}/backup/${timestamp} || true
 
 # metadataを作業ディレクトリにコピー
-cp -p  ${metadataDir}/lat-long-date.txt ${workdir}/data/ || true
+#cp -p  ${metadataDir}/lat-long-date.txt ${workdir}/data/ || true
 
 # MiFishプライマーでヒットしたSRA番号のリストを取得
 #docker run -i --rm -v "$workdir":"$workdir" -w "$workdir" c2997108/selenium-chrome:4.3.0_selenium_xlrd bash ${workdir}/script/download_metadata.sh
@@ -63,11 +67,11 @@ done
 sort -t$'\t' -k3,3 -k1,1V ${workdir}/data/lat-long-date.txt > ${workdir}/data/lat-long-date.txt.tmp
 mv ${workdir}/data/lat-long-date.txt.tmp ${workdir}/data/lat-long-date.txt
 
-# テスト環境にデータをコピー 2023/2 国際化のテストでディレクトリ名が変更になるの一時中止
-cp -rp ${workdir}/inputFiles/* ${mitosearch_dev_db}
+# テスト環境にデータをコピー
+rsync -av ${workdir}/inputFiles/db_fish* ${mitosearch_dev_path}/
 cp -p ${workdir}/data/lat-long-date.txt ${metadataDir_dev}
 # 本番環境にデータをコピー
-cp -rp ${workdir}/inputFiles/* ${mitosearch_db}
+rsync -av ${workdir}/inputFiles/db_fish* ${mitosearch_path}/
 cp -p ${workdir}/data/lat-long-date.txt ${metadataDir}
 # inputFileを削除
 #rm -f ${workdir}/inputFiles/*.input

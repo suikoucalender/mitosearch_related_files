@@ -23,10 +23,6 @@ blastdb="${workdir}"/db/database.fasta
 # 魚種和名ファイルのPath
 fishname_ja_Path="${workdir}"/db/20210718_JAFList.xlsx
 
-# inputFileを格納しているディレクトリ
-mitosearch_db="$mitosearch_path"/db_fish
-mitosearch_dev_db="$mitosearch_dev_path"/db_fish
-
 # metadataを格納しているディレクトリ
 metadataDir="$mitosearch_path"/data/fish
 metadataDir_dev="$mitosearch_dev_path"/data/fish
