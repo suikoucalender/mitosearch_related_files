@@ -82,11 +82,7 @@ awk -F'\t' '
 
 
 # makeblastdb,アダプター配列の検索
-<<<<<<< HEAD
-if [ ! -e Sequencing_adaptors.fasta ]; then cp /home/mizobata.hideaki/files/m768c/mizobata.hideaki/work/mizowork/database_development/investigation_16S_database/mitosearch_automatic_update_script/mitosearch_related_files/db/Sequencing_adaptors.fasta .; fi
-=======
 if [ ! -e Sequencing_adaptors.fasta ]; then cp "$sdir"/../db/Sequencing_adaptors.fasta .; fi
->>>>>>> f5ea213f9c897d9ac75e4b7276fe0d8012b6917b
 ${singularity_path} run "$sdir"/../singularity_image/blast.sif makeblastdb -dbtype nucl -in $db
 ${singularity_path} run "$sdir"/../singularity_image/blast.sif blastn -db $db -query Sequencing_adaptors.fasta -outfmt 6 -max_target_seqs 10000000 -word_size 15|
  awk '{if($9<$10){print $2"\t"$9-1"\t"$10}else{print $2"\t"$10-1"\t"$9}}' > ${db}.adaptors.bed
