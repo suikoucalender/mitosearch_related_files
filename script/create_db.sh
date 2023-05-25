@@ -33,7 +33,20 @@ fi
 singularity_path_temp=`which singularity`
 if [ "$singularity_path_temp" != "" ]; then singularity_path="$singularity_path_temp"; fi
 
-#データベースのダウンロード
+#16S-ITGDBデータベースのダウンロード
+if [ ! -e 16S-ITGDB.fasta ]; then
+    itgdb=1pI4bze7yHSXdwZMmuOpqWDLynpSJ8dkB
+    curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=${itgdb}" > /dev/null
+    CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"
+    curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CODE}&id=${itgdb}" -o 16S-ITGDB.fasta
+fi
+
+#16S-ITGDBの修正。Greengenesのacc2taxidをダウンロードし、Genbankアクセッション番号に変換。
+wget https://gg-sg-web.s3-us-west-2.amazonaws.com/downloads/greengenes_database/gg_13_5/gg_13_5_accessions.txt.gz
+awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=$3;}if(FILENAME==ARGV[2]){if($1 in list){$1=list[$1]}print $1".16S-ITGDB\t"$2;}}' <(zcat gg_13_5_accessions.txt.gz) <(seqkit fx2tab 16S-ITGDB.fasta)|seqkit tab2fx > 16S-ITGDB_corrected.fasta
+rm 16S-ITGDB.fasta
+
+#他データベースのダウンロード
 for i in 16S_ribosomal_RNA LSU_prokaryote_rRNA mito; do
  wget ftp://ftp.ncbi.nih.gov/blast/db/$i.tar.gz
  tar vxf $i.tar.gz
@@ -69,7 +82,11 @@ awk -F'\t' '
 
 
 # makeblastdb,アダプター配列の検索
+<<<<<<< HEAD
+if [ ! -e Sequencing_adaptors.fasta ]; then cp /home/mizobata.hideaki/files/m768c/mizobata.hideaki/work/mizowork/database_development/investigation_16S_database/mitosearch_automatic_update_script/mitosearch_related_files/db/Sequencing_adaptors.fasta .; fi
+=======
 if [ ! -e Sequencing_adaptors.fasta ]; then cp "$sdir"/../db/Sequencing_adaptors.fasta .; fi
+>>>>>>> f5ea213f9c897d9ac75e4b7276fe0d8012b6917b
 ${singularity_path} run "$sdir"/../singularity_image/blast.sif makeblastdb -dbtype nucl -in $db
 ${singularity_path} run "$sdir"/../singularity_image/blast.sif blastn -db $db -query Sequencing_adaptors.fasta -outfmt 6 -max_target_seqs 10000000 -word_size 15|
  awk '{if($9<$10){print $2"\t"$9-1"\t"$10}else{print $2"\t"$10-1"\t"$9}}' > ${db}.adaptors.bed
