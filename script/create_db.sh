@@ -34,16 +34,20 @@ singularity_path_temp=`which singularity`
 if [ "$singularity_path_temp" != "" ]; then singularity_path="$singularity_path_temp"; fi
 
 #16S-ITGDBデータベースのダウンロード
-if [ ! -e 16S-ITGDB.fasta ]; then
+if [ ! -e "$sdir/../db/16S-ITGDB.fasta" ]; then
     itgdb=1pI4bze7yHSXdwZMmuOpqWDLynpSJ8dkB
-    curl -sc /tmp/cookie "https://drive.google.com/uc?export=download&id=${itgdb}" > /dev/null
-    CODE="$(awk '/_warning_/ {print $NF}' /tmp/cookie)"
-    curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=${CODE}&id=${itgdb}" -o 16S-ITGDB.fasta
+    curl -Lb /tmp/cookie "https://drive.google.com/uc?export=download&confirm=&id=${itgdb}" -o "$sdir/../db/16S-ITGDB.fasta"
 fi
 
 #16S-ITGDBの修正。Greengenesのacc2taxidをダウンロードし、Genbankアクセッション番号に変換。
-wget https://gg-sg-web.s3-us-west-2.amazonaws.com/downloads/greengenes_database/gg_13_5/gg_13_5_accessions.txt.gz
-awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=$3;}if(FILENAME==ARGV[2]){if($1 in list){$1=list[$1]}print $1".16S-ITGDB\t"$2;}}' <(zcat gg_13_5_accessions.txt.gz) <(seqkit fx2tab 16S-ITGDB.fasta)|seqkit tab2fx > 16S-ITGDB_corrected.fasta
+if [ ! -e "$sdir/../db/gg_13_5_accessions.txt.gz" ]; then
+ wget -O "$sdir/../db/gg_13_5_accessions.txt.gz" https://gg-sg-web.s3-us-west-2.amazonaws.com/downloads/greengenes_database/gg_13_5/gg_13_5_accessions.txt.gz
+fi
+cp "$sdir/../db/16S-ITGDB.fasta" .
+awk -F"\t" '{
+  if(FILENAME==ARGV[1]){list[$1]=$3;}
+  if(FILENAME==ARGV[2]){if($1 in list){$1=list[$1]}print $1".16S-ITGDB\t"$2;}
+ }' <(zcat "$sdir/../db/gg_13_5_accessions.txt.gz") <(${singularity_path} run "$sdir/../singularity_image/seqkit.sif" seqkit fx2tab 16S-ITGDB.fasta)|${singularity_path} run "$sdir/../singularity_image/seqkit.sif" seqkit tab2fx > 16S-ITGDB_corrected.fasta
 rm 16S-ITGDB.fasta
 
 #他データベースのダウンロード
