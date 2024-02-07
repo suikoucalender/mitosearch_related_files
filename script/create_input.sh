@@ -27,6 +27,9 @@ if [ ! -e "${workdir}/singularity_image/seqkit.sif" ]; then
  wget -O "${workdir}/singularity_image/seqkit.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/seqkit.sif
 fi
 
+if [ ! -e "${workdir}/singularity_image/ncbi_blast:2.13.0.sif" ]; then
+ wget -O "${workdir}/singularity_image/ncbi_blast:2.13.0.sif" https://github.com/suikoucalender/mitosearch_related_files/releases/download/0.01/ncbi_blast_2.13.0.sif
+fi
 
 # 一時ファイルを配置するディレクトリをサンプルごとに作成
 mkdir -p ${tmpdir}/${prefix}
@@ -90,7 +93,7 @@ awk 'END{print "after remove N reads: "NR/2}' ${tmpdir}/${prefix}/out.extendedFr
 # awk -F"\t" '{if(FILENAME==ARGV[1]){list[$1]=$2;}if(FILENAME==ARGV[2]&&list[$1]!=$2){a=list[$1];sub($2,"",a);print list[$1]"\t"$2"\t"a;}}' <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags.fasta <(seqkit fx2tab ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta) > ../inputFiles/${prefix}.adapters
 
 # データベースに対してBlastnで相同性検索を行う。
-${blastn_path} -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 10 | awk -F'\t' 'a[$1]!=1{a[$1]=1; print $0}' > ${tmpdir}/${prefix}/blast.result
+$singularity_path exec -B "$workdir" -B ${tmpdir} ${workdir}/singularity_image/ncbi_blast:2.13.0.sif blastn -num_threads 8 -db ${blastdb} -query ${tmpdir}/${prefix}/out.extendedFrags_trimed.fasta -outfmt "6 qseqid sseqid qlen slen pident length mismatch gapopen qstart qend sstart send evalue bitscore staxids stitle" -max_target_seqs 10 | awk -F'\t' 'a[$1]!=1{a[$1]=1; print $0}' > ${tmpdir}/${prefix}/blast.result
 awk 'END{print "blast hits: "NR}' ${tmpdir}/${prefix}/blast.result >> "$logfile"
 
 # ハイスコアなblast結果のトップヒットを抽出し、アクセッションIDのリストに変換

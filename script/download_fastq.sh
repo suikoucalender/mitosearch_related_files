@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ~/.bashrc
+
 # フォルダ等の設定を読み込み
 sdir=$(dirname `readlink -f "$0" || echo "$0"`)
 source "$sdir"/config.sh
