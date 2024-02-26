@@ -39,3 +39,8 @@ run code one by one:
 
 6.preparing indexlist
     node 16levelClickIndexName.js language
+
+
+
+
+copy "layered_data" folder into "public"
