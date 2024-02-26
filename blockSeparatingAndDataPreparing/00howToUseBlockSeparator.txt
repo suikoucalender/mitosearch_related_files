@@ -1,0 +1,41 @@
+following files are needed. put them in same path
+language = zh OR ja OR en
+
+    lat-long-data.txt 
+    db_fish_[language]
+    js files mentioned below(01,11,12,13,14,15,16)
+
+
+
+
+prepare data of different level.  ratioAndBlock={"2":45,"3":30,"4":15,"5":5,"6":3,"7":2,"8":1,"9":0.5,"10":0.2,"11":0.1,"12":0.05,"13":0.05,"14":0.02,"15":0.02,"16":0.02,"17":0.01,"18":"special"}
+for level1-17, needed blocksize: 
+45, 30, 15, 5, 3, 2, 1, 0.5, 0.2, 0.1, 0.05, 0.02, 0.01
+if you changed ratioAndBlock in javascripts related to pie chart, please also prepare corresponding data
+
+run code:
+    node 01blockSeparatorForLevel1to17decimal.js lat-long-date.txt db_fish_zh blocksize
+
+
+
+
+for level 18, prepare special data
+run code one by one:
+
+1.Organize and put the data files into paths of each latitude and longitude according to the lat-long-data file
+    node 11levelClickDataSeparator.js language
+
+2.Make an index file by latitude/longitude path and file name of the data
+    node 12levelClickIndexMaker.js language
+
+3.Move all data files to the top path according to the index file
+    node 13levelClickFileMover.js language
+
+4.Delete all latitude and longitude paths by index file
+    node 14levelClickPathRemover.js language
+
+5.Subdividing the total index file into blocks, in test I set blocksize = 1.
+    node 15levelClickIndexSeparator.js blocksize language
+
+6.preparing indexlist
+    node 16levelClickIndexName.js language
