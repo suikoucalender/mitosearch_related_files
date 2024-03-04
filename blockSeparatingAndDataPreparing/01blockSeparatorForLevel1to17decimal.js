@@ -3,10 +3,10 @@ const args = process.argv.slice(2)
 const fs = require('fs');
 const path = require('path');
 
-const locationPath = args[0];
-const imputFolderPath = args[1];
-var blockSize = new Decimal(args[2]);
-var lang = imputFolderPath.slice(-2);
+const locationPath = args[0]; //lat-long-data.txt
+const imputFolderPath = args[1]; //db_fish_[language]
+var blockSize = new Decimal(args[2]); //ratioAndBlock={"2":45,"3":30,"4":15,"5":5,"6":3,"7":2,"8":1,"9":0.5,"10":0.2,"11":0.1,"12":0.05,"13":0.05,"14":0.02,"15":0.02,"16":0.02,"17":0.01,"18":"special"}
+var lang = imputFolderPath.slice(-2); //最後の2文字を切り出す
 
 // read lat-long-date.txt file
 var locationInfo;
