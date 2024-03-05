@@ -151,6 +151,7 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
             }
         }
         //月ごとに生物種を集計
+        let MonthWholeData = []
         for (const month in MonthSamples) {
             let monthSpeciesData = {}
             let sampleNumberInMonth = MonthSamples[month].length
@@ -168,10 +169,13 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
             for(const specname in monthSpeciesData){
                 monthInputList.push({name: specname, value: monthSpeciesData[specname] / sampleNumberInMonth})
             }
-            //月ごとの種組成を出力
-            //console.log("[monthInputList]: ", monthInputList)
             console.log("### month, sampleNumberInMonth: ", month, sampleNumberInMonth)
-            fs.writeFileSync(`layered_data/${lang}/${blockSize}/${blocknamearray[0]}/${blocknamearray[1]}/month${month}.json`, JSON.stringify({num: sampleNumberInMonth, data: monthInputList}, null, 2), (err) => {
+            MonthWholeData.push({month: month, num: sampleNumberInMonth, data: monthInputList})
+        }
+        //月ごとの種組成を出力
+        if(MonthWholeData.length!=0){
+            fs.writeFileSync(`layered_data/${lang}/${blockSize}/${blocknamearray[0]}/${blocknamearray[1]}/month.json`,
+             JSON.stringify(MonthWholeData, null, 2), (err) => {
                 if (err) throw err;
                 console.log('Data written to file');
             });
