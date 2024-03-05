@@ -140,7 +140,7 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
             const regex = /^[12][0-9]{3}-[0-9]{2}/; //年月が1xxx-xx, 2xxx-xxを対象
             const isMatch = regex.test(fileData.time);
             if(isMatch){
-                const Month = fileData.time.slice(5,7)
+                const Month = fileData.time.slice(5,7) //月を抜き出す
                 if (!(Month in MonthSamples)) {
                     MonthSamples[Month] = [filename];
                 } else {
@@ -151,12 +151,12 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
             }
         }
         //月ごとに生物種を集計
-        for (const month of Object.keys(MonthSamples)) {
+        for (const month in MonthSamples) {
             let monthSpeciesData = {}
             let sampleNumberInMonth = MonthSamples[month].length
             for (const filename of MonthSamples[month]) {
                 const monthSampleData = data[filename].species;
-                for(const specname of Object.keys(monthSampleData)){
+                for(const specname in monthSampleData){
                     if(!(specname in monthSpeciesData)){
                         monthSpeciesData[specname] = parseFloat(monthSampleData[specname])
                     }else{
@@ -165,7 +165,7 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
                 }
             }
             let monthInputList = []
-            for(const specname of Object.keys(monthSpeciesData)){
+            for(const specname in monthSpeciesData){
                 monthInputList.push({name: specname, value: monthSpeciesData[specname] / sampleNumberInMonth})
             }
             //月ごとの種組成を出力
