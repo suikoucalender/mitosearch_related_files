@@ -3,6 +3,7 @@ const Decimal = require('./decimal.js');
 const args = process.argv.slice(2)
 const fs = require('fs');
 const path = require('path');
+const { spec } = require('node:test/reporters');
 
 const locationPath = args[0]; //lat-long-data.txt
 const imputFolderPath = args[1]; //db_fish_[language]
@@ -27,6 +28,7 @@ let blockSizes = { "2": "45", "3": "30", "4": "15", "5": "5", "6": "3", "7": "2"
 for (const blockSizeKey of Object.keys(blockSizes)) {
     const blockSize = new Decimal(blockSizes[blockSizeKey])
     console.log("blockSize: ", blockSize)
+    //ブロックごとにどのSRR IDが来るかを分別
     //prepare block information
     let blockInfo = {}
     let data = {}
@@ -78,8 +80,9 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
 
     //console.log(data)
 
-    //follow the block information, prepare pie data
     for (let x = 0; x < blockname.length; x++) {//loop for each block
+        //円グラフを作成
+        //follow the block information, prepare pie data
         let blocknamearray = blockname[x].split(',')
         let samplenumber = blockInfo[blockname[x]].length
         let sumLat = new Decimal(0)
@@ -128,7 +131,53 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
                 console.log('Data written to file');
             });
         }
+
+        //月ごとにデータを集約したファイルを作成
+        let MonthSamples = {}
+        for (let s = 0; s < samplenumber; s++) {//loop for each file
+            let filename = blockInfo[blockname[x]][s]
+            let fileData = data[filename] //lat, long, time, species{}
+            const regex = /^[12][0-9]{3}-[0-9]{2}/; //年月が1xxx-xx, 2xxx-xxを対象
+            const isMatch = regex.test(fileData.time);
+            if(isMatch){
+                const Month = fileData.time.slice(5,7)
+                if (!(Month in MonthSamples)) {
+                    MonthSamples[Month] = [filename];
+                } else {
+                    MonthSamples[Month].push(filename);
+                }
+            }else{
+                console.log("Date is missing: ", filename)
+            }
+        }
+        //月ごとに生物種を集計
+        for (const month of Object.keys(MonthSamples)) {
+            let monthSpeciesData = {}
+            let sampleNumberInMonth = MonthSamples[month].length
+            for (const filename of MonthSamples[month]) {
+                const monthSampleData = data[filename].species;
+                for(const specname of Object.keys(monthSampleData)){
+                    if(!(specname in monthSpeciesData)){
+                        monthSpeciesData[specname] = parseFloat(monthSampleData[specname])
+                    }else{
+                        monthSpeciesData[specname] += parseFloat(monthSampleData[specname])
+                    }
+                }
+            }
+            let monthInputList = []
+            for(const specname of Object.keys(monthSpeciesData)){
+                monthInputList.push({name: specname, value: monthSpeciesData[specname] / sampleNumberInMonth})
+            }
+            //月ごとの種組成を出力
+            //console.log("[monthInputList]: ", monthInputList)
+            console.log("### month, sampleNumberInMonth: ", month, sampleNumberInMonth)
+            fs.writeFileSync(`layered_data/${lang}/${blockSize}/${blocknamearray[0]}/${blocknamearray[1]}/month${month}.json`, JSON.stringify({num: sampleNumberInMonth, data: monthInputList}, null, 2), (err) => {
+                if (err) throw err;
+                console.log('Data written to file');
+            });
+        }
     }
+
 
 }
 
