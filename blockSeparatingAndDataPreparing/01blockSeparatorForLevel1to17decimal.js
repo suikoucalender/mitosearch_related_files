@@ -174,7 +174,7 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
         //月ごとの種組成を出力
         if(MonthWholeData.length!=0){
             fs.writeFileSync(`layered_data/${lang}/${blockSize}/${blocknamearray[0]}/${blocknamearray[1]}/month.json`,
-             JSON.stringify(MonthWholeData, null, 2), (err) => {
+             JSON.stringify({y: blocknamearray[0], x: blocknamearray[1], monthdata: MonthWholeData}, null, 2), (err) => {
                 if (err) throw err;
                 console.log('Data written to file');
             });
