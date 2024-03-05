@@ -3,7 +3,6 @@ const Decimal = require('./decimal.js');
 const args = process.argv.slice(2)
 const fs = require('fs');
 const path = require('path');
-const { spec } = require('node:test/reporters');
 
 const locationPath = args[0]; //lat-long-data.txt
 const imputFolderPath = args[1]; //db_fish_[language]
