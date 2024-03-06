@@ -1,5 +1,5 @@
 const fs = require('fs');
-const Decimal = require('decimal.js')
+const Decimal = require('./decimal.js')
 const args = process.argv.slice(2)
 let lang=args[0]
 // read lat-long-date.txt file
@@ -101,6 +101,7 @@ for(i=0;i<data.length;i++){
     var longTemp=data[i]["long"]
     var idTemp=data[i]["ID"]
     var fileTemp=data[i]
+    //console.log(latTemp,longTemp,idTemp,fileTemp)
     writeFileOrDirectory(latTemp,longTemp,idTemp,fileTemp)
 }
 //blocknamelist=[...new Set(blocknamelist)]

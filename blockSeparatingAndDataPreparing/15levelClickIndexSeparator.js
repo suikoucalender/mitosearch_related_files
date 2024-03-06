@@ -1,5 +1,5 @@
 const fs = require('fs');
-const Decimal = require('decimal.js')
+const Decimal = require('./decimal.js')
 const args = process.argv.slice(2)
 let blockSize = new Decimal(args[0]);
 let lang = args[1]
@@ -12,10 +12,10 @@ let keys=Object.keys(groupedList)
 
 let indexSave={}
 keys.forEach(key => {
+    console.log("key: ", key)
     let keysplit = key.split(",")
     let keylat=new Decimal(keysplit[0])
     let keylng=new Decimal(keysplit[1])
-    console.log(key)
     let blocklat=getBlockStartCoord(keylat,blockSize,"lat")
     let blocklng=getBlockStartCoord(keylng,blockSize,"lng")
     let block=`${blocklat},${blocklng}`

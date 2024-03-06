@@ -34,11 +34,14 @@ filePaths=createIndex(`layered_data/${lang}/special`);
 let groupedPaths = {};
 
 filePaths.forEach(filePath => {
-    let parts = filePath.split('/');
+    //console.log(filePath)
+    let parts = filePath.split(path.sep);
+    //console.log(parts)
     let lat = parts[3];
     let lon = parts[4];
     let fileName = parts[parts.length - 1];
     let key = `${lat},${lon}`;
+    //console.log(key)
 
     if (!groupedPaths[key]) {
         groupedPaths[key] = [];
