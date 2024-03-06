@@ -1,7 +1,8 @@
 following files are needed. put them in same path
 language = zh OR ja OR en
 
-    lat-long-data.txt 
+    lat-long-data.txt
+    mapwater.result.txt
     db_fish_[language]
     js files mentioned below(01,11,12,13,14,15,16)
 
@@ -14,7 +15,7 @@ for level1-17, needed blocksize:
 if you changed ratioAndBlock in javascripts related to pie chart, please also prepare corresponding data
 
 run code:
-    node 01blockSeparatorForLevel1to17decimal.js lat-long-date.txt db_fish_zh blocksize
+    node 01blockSeparatorForLevel1to17decimal.js lat-long-date.txt mapwater.result.txt db_fish_ja //blocksize 45-0.01までを一度に作成
 
 
 
@@ -23,7 +24,7 @@ for level 18, prepare special data
 run code one by one:
 
 1.Organize and put the data files into paths of each latitude and longitude according to the lat-long-data file
-    node 11levelClickDataSeparator.js language
+    node 11levelClickDataSeparator.js language(ja/zh/en)
 
 2.Make an index file by latitude/longitude path and file name of the data
     node 12levelClickIndexMaker.js language
@@ -41,6 +42,15 @@ run code one by one:
     node 16levelClickIndexName.js language
 
 
+language=ja
+#$language="ja" #for powershell
+node 01blockSeparatorForLevel1to17decimal.js lat-long-date.txt mapwater.result.txt db_fish_$language
+node 11levelClickDataSeparator.js $language
+node 12levelClickIndexMaker.js $language
+node 13levelClickFileMover.js $language
+node 14levelClickPathRemover.js $language
+node 15levelClickIndexSeparator.js 1 $language
+node 16levelClickIndexName.js $language
 
 
 copy "layered_data" folder into "public"

@@ -5,26 +5,40 @@ const fs = require('fs');
 const path = require('path');
 
 const locationPath = args[0]; //lat-long-data.txt
-const imputFolderPath = args[1]; //db_fish_[language]
-//let blockSize = new Decimal(args[2]); //ratioAndBlock={"2":45,"3":30,"4":15,"5":5,"6":3,"7":2,"8":1,"9":0.5,"10":0.2,"11":0.1,"12":0.05,"13":0.05,"14":0.02,"15":0.02,"16":0.02,"17":0.01,"18":"special"}
+const waterPath = args[1]; //mapwater.result.txt
+const imputFolderPath = args[2]; //db_fish_[language]
+//let blockSize = new Decimal(args[3]); //ratioAndBlock={"2":45,"3":30,"4":15,"5":5,"6":3,"7":2,"8":1,"9":0.5,"10":0.2,"11":0.1,"12":0.05,"13":0.05,"14":0.02,"15":0.02,"16":0.02,"17":0.01,"18":"special"}
 let lang = imputFolderPath.slice(-2); //最後の2文字を切り出す
 
 // read lat-long-date.txt file
 let locationInfo = fs.readFileSync(locationPath, 'utf8');
 let locationInfoLines = locationInfo.split('\n');
 removeEmptyLastItem(locationInfoLines);
+
+//read mapwater.result.txt file
+let aquaDataTemp=fs.readFileSync(waterPath,'utf8');
+let aquaDataTempLines = aquaDataTemp.split('\n')
+removeEmptyLastItem(aquaDataTempLines);
+let aquaData={}
+for(let aquaDataTemp of aquaDataTempLines){
+    let aquaDataTempItems = aquaDataTemp.split('\t');
+    aquaData[aquaDataTempItems[0]]=aquaDataTempItems[1];
+}
+console.log(aquaData)
+
 let locationInfoItems = [];
-for (let i = 0; i < locationInfoLines.length; i++) {
-    let templocationInfoItem = locationInfoLines[i].split('\t');
+for(let locationInfoLine of locationInfoLines){
+    let templocationInfoItem = locationInfoLine.split('\t'); //'ERR11637981', '11.84508333 S 96.82013333 E', '2022-12-06'
     let tempLatLong = templocationInfoItem[1].split(' ')
-    if (tempLatLong[0] !== "" && tempLatLong.length === 4 && !isNaN(tempLatLong[0])) {
+    //console.log(templocationInfoItem, tempLatLong[0], aquaData[templocationInfoItem[0]]);
+    if (tempLatLong[0] !== "" && tempLatLong.length === 4 && !isNaN(tempLatLong[0]) && aquaData[templocationInfoItem[0]]==="1") {
         //経度緯度が記述されていれば追加
         locationInfoItems.push(templocationInfoItem);
     }
 }
 
 let blockSizes = { "2": "45", "3": "30", "4": "15", "5": "5", "6": "3", "7": "2", "8": "1", "9": "0.5", "10": "0.2", "11": "0.1", "12": "0.05", "14": "0.02", "17": "0.01" }
-for (const blockSizeKey of Object.keys(blockSizes)) {
+for (const blockSizeKey in blockSizes) {
     const blockSize = new Decimal(blockSizes[blockSizeKey])
     console.log("blockSize: ", blockSize)
     //ブロックごとにどのSRR IDが来るかを分別
@@ -32,8 +46,8 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
     let blockInfo = {}
     let data = {}
     //Convert latitude and longitude to digital format
-    for (let i = 0; i < locationInfoItems.length; i++) {
-        let tempLatLong = locationInfoItems[i][1].split(' ')
+    for(let locationInfoItem of locationInfoItems){
+        let tempLatLong = locationInfoItem[1].split(' ')
         let tempLat = new Decimal(tempLatLong[0])
         let tempLong = new Decimal(tempLatLong[2])
         if (tempLatLong[1] === "S") { tempLat = tempLat.div(-1) }
@@ -43,13 +57,12 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
         let key = `${blocklattemp},${blocklongtemp}`
 
         // reading .input files and Integrating location Info
-        let inputFileID = locationInfoItems[i][0] //SRR24416895など
+        let inputFileID = locationInfoItem[0] //SRR24416895など
         let inputFileName = inputFileID + ".input"
         let inputFilePath = `${imputFolderPath}/${inputFileName}`
         let species = {}
         let tempSpecies
         if (!fs.existsSync(inputFilePath)) {
-            //console.log(`${inputFileID}.input does not exist. Skipping...`);
             continue; // Skip to next iteration if file does not exist
         }
         //read files
@@ -65,7 +78,7 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
             //console.log(tempSpeciesItems)
             species[tempSpeciesItems[0]] = new Decimal(tempSpeciesItems[1]);
         }
-        let datatemp = { time: locationInfoItems[i][2], lat: tempLat, long: tempLong, species: species }
+        let datatemp = { time: locationInfoItem[2], lat: tempLat, long: tempLong, species: species }
         data[inputFileID] = datatemp
 
         if (!(key in blockInfo)) {
@@ -75,21 +88,18 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
         }
     }
     //console.log(blockInfo)//looks like {`blocklat,blocklng`:fileName}
-    let blockname = Object.keys(blockInfo)
-
     //console.log(data)
 
-    for (let x = 0; x < blockname.length; x++) {//loop for each block
+    for(let blockname in blockInfo){ //blockname: lat,long 39,140など, blockInfo: {key(lat-long): [fileID]}
         //円グラフを作成
         //follow the block information, prepare pie data
-        let blocknamearray = blockname[x].split(',')
-        let samplenumber = blockInfo[blockname[x]].length
+        let blocknamearray = blockname.split(',')
+        let samplenumber = blockInfo[blockname].length
         let sumLat = new Decimal(0)
         let sumLong = new Decimal(0)
         let blockSpecies = {}
         console.log("--------------------------(" + blocknamearray + ")--------------------------")
-        for (let s = 0; s < samplenumber; s++) {//loop for each file
-            let filename = blockInfo[blockname[x]][s]
+        for(let filename of blockInfo[blockname]){
             let fileSpeciesData = data[filename] //lat, long, time, species{}
             //record pie location
             sumLat = Decimal.add(sumLat, fileSpeciesData.lat)
@@ -133,8 +143,7 @@ for (const blockSizeKey of Object.keys(blockSizes)) {
 
         //月ごとにデータを集約したファイルを作成
         let MonthSamples = {}
-        for (let s = 0; s < samplenumber; s++) {//loop for each file
-            let filename = blockInfo[blockname[x]][s]
+        for(let filename of blockInfo[blockname]){
             let fileData = data[filename] //lat, long, time, species{}
             const regex = /^[12][0-9]{3}-[0-9]{2}/; //年月が1xxx-xx, 2xxx-xxを対象
             const isMatch = regex.test(fileData.time);
