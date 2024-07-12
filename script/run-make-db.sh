@@ -1,6 +1,11 @@
+#!/bin/bash
+
+set -x
+
 #データベースのダウンロード
-wget http://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
-wget http://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz #なぜか北里大学の中ではこのファイルをftp://からダウンロードしようとすると必ずファイルサイズが違う変なファイルが出来てしまう
+#なぜか北里大学の中ではファイルをftp://からダウンロードしようとすると必ずファイルサイズが違う変なファイルが出来てしまう
+wget https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
+wget https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
 tar vxf taxdump.tar.gz
 cat names.dmp |awk -F'\t' '$7=="scientific name"{print $0}' > names.dmp.sname
 awk -F'\t' '
@@ -9,10 +14,13 @@ awk -F'\t' '
  END{for(i in name){str=name[i]; key=parent[i]; while(1){if(key==1){str=name[key]";"str; break}; str=name[key]";"str; key=parent[key]}; print i"\t"str}}
 ' nodes.dmp names.dmp.sname > names.dmp.sname.path
 
-wget http://ftp.ncbi.nih.gov/blast/db/mito.tar.gz
+wget https://ftp.ncbi.nih.gov/blast/db/mito.tar.gz
 tar vxf mito.tar.gz
 blastdbcmd -db mito -entry all | gzip -c > mito.fasta.gz
-wget ftp://ftp.ncbi.nih.gov/refseq/release/plastid/plastid.*.genomic.fna.gz
+#wget ftp://ftp.ncbi.nih.gov/refseq/release/plastid/plastid.*.genomic.fna.gz
+for i in `curl https://ftp.ncbi.nih.gov/refseq/release/plastid/|grep plastid|grep genomic.fna.gz|sed 's/.*href="//; s/".*//'`; do
+ wget https://ftp.ncbi.nih.gov/refseq/release/plastid/$i
+done
 
 (cat mito-all | grep "^>" | cut -f 2 -d '|'; zcat mito.fasta.gz plastid.*.genomic.fna.gz|grep "^>"|sed 's/^>//'|cut -f 1 -d '.')|awk -F'\t' 'FILENAME==ARGV[1]{a[$1]=1} FILENAME==ARGV[2]&&$1 in a{print $0}' /dev/stdin <(zcat nucl_gb.accession2taxid.gz) > nucl_gb.accession2taxid.mito-plastid.txt
 
