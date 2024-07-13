@@ -22,12 +22,12 @@ for i in `curl https://ftp.ncbi.nih.gov/refseq/release/plastid/|grep plastid|gre
  wget https://ftp.ncbi.nih.gov/refseq/release/plastid/$i
 done
 
+wget -O complete_partial_mitogenomes.zip "http://mitofish.aori.u-tokyo.ac.jp/species/detail/download/?filename=download%2F/complete_partial_mitogenomes.zip"
+unzip complete_partial_mitogenomes.zip
 (cat mito-all | grep "^>" | cut -f 2 -d '|'; zcat mito.fasta.gz plastid.*.genomic.fna.gz|grep "^>"|sed 's/^>//'|cut -f 1 -d '.')|awk -F'\t' 'FILENAME==ARGV[1]{a[$1]=1} FILENAME==ARGV[2]&&$1 in a{print $0}' /dev/stdin <(zcat nucl_gb.accession2taxid.gz) > nucl_gb.accession2taxid.mito-plastid.txt
 
 seqkit fx2tab mito.fasta.gz plastid.*.genomic.fna.gz |awk -F'\t' 'FILENAME==ARGV[1]{path[$1]=$2} FILENAME==ARGV[2]{tax[$1]=$3} FILENAME==ARGV[3]{split($1,arr,"."); sp=path[tax[arr[1]]]; if(sp!=""){print ">"arr[1]" "sp"\n"$2}}' names.dmp.sname.path nucl_gb.accession2taxid.mito-plastid.txt /dev/stdin |sed 's/ root;cellular organisms;/ /' > ncbi-mito-plastid.fasta
 
-wget -O complete_partial_mitogenomes.zip "http://mitofish.aori.u-tokyo.ac.jp/species/detail/download/?filename=download%2F/complete_partial_mitogenomes.zip"
-unzip complete_partial_mitogenomes.zip
 seqkit fx2tab mito-all |awk -F'\t' 'FILENAME==ARGV[1]{path[$1]=$2} FILENAME==ARGV[2]{tax[$1]=$3} FILENAME==ARGV[3]{split($1,arr,"|"); sp=path[tax[arr[2]]]; if(sp!=""){print ">MITOFISH_"arr[2]" "sp"\n"$2}}' names.dmp.sname.path nucl_gb.accession2taxid.mito-plastid.txt /dev/stdin |sed 's/ root;cellular organisms;/ /' > mito-fish.fasta
 
 wget https://github.com/pr2database/pr2database/releases/download/v5.0.0/pr2_version_5.0.0_SSU_taxo_long.fasta.gz
