@@ -3,7 +3,7 @@
 set -x
 
 #データベースのダウンロード
-#なぜか北里大学の中ではファイルをftp://からダウンロードしようとすると必ずファイルサイズが違う変なファイルが出来てしまう
+#なぜか北里大学の中ではファイルをftp://からダウンロードしようとすると必ずファイルサイズが違う変なファイルが出来てしまうのでhttps://からダウンロード
 wget https://ftp.ncbi.nih.gov/pub/taxonomy/accession2taxid/nucl_gb.accession2taxid.gz
 wget https://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
 tar vxf taxdump.tar.gz
